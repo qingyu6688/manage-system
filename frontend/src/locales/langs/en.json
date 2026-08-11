@@ -1,0 +1,902 @@
+{
+  "httpMsg": {
+    "unauthorized": "Unauthorized access, please login again",
+    "forbidden": "Access to this resource is forbidden",
+    "notFound": "The requested resource does not exist",
+    "methodNotAllowed": "Request method not allowed",
+    "requestTimeout": "Request timeout, please try again later",
+    "internalServerError": "Internal server error, please try again later",
+    "badGateway": "Bad gateway error, please try again later",
+    "serviceUnavailable": "Service temporarily unavailable, please try again later",
+    "gatewayTimeout": "Gateway timeout, please try again later",
+    "requestCancelled": "Request cancelled",
+    "errorId": "Error ID: {id}",
+    "networkError": "Network connection error, please check your connection",
+    "requestFailed": "Request failed",
+    "requestConfigError": "Request configuration error"
+  },
+  "app": {
+    "name": "General Admin System"
+  },
+  "topBar": {
+    "search": {
+      "title": "Search"
+    },
+    "user": {
+      "userCenter": "User center",
+      "docs": "Document",
+      "github": "Github",
+      "lockScreen": "Lock screen",
+      "logout": "Log out"
+    },
+    "guide": {
+      "title": "Click here to view ",
+      "theme": "Theme style",
+      "separator": ", ",
+      "menu": "Open top menu",
+      "description": " and more settings"
+    }
+  },
+  "common": {
+    "tips": "Prompt",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "logOutTips": "Do you want to log out?",
+    "submit": "Submit",
+    "save": "Save",
+    "edit": "Edit",
+    "delete": "Delete",
+    "add": "Add",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "stopped": "Stopped",
+    "unknown": "Unknown",
+    "operations": "Actions",
+    "index": "No.",
+    "gender": "Gender",
+    "male": "Male",
+    "female": "Female",
+    "status": "Status",
+    "createdAt": "Created At",
+    "phone": "Phone",
+    "email": "Email",
+    "description": "Description",
+    "expand": "Expand",
+    "collapse": "Collapse",
+    "reset": "Reset",
+    "retry": "Retry",
+    "saved": "Saved"
+  },
+  "search": {
+    "placeholder": "Search page",
+    "historyTitle": "Search history",
+    "switchKeydown": "Navigate",
+    "selectKeydown": "Select",
+    "exitKeydown": "Close"
+  },
+  "setting": {
+    "menuType": {
+      "title": "Menu Layout",
+      "list": ["Vertical", "Horizontal", "Mixed", "Dual"]
+    },
+    "theme": {
+      "title": "Theme Style",
+      "list": ["Light", "Dark", "System"]
+    },
+    "menu": {
+      "title": "Menu Style"
+    },
+    "color": {
+      "title": "Theme Color"
+    },
+    "box": {
+      "title": "Box Style",
+      "list": ["Border", "Shadow"]
+    },
+    "container": {
+      "title": "Container Width",
+      "list": ["Full", "Boxed"]
+    },
+    "basics": {
+      "title": "Basic Config",
+      "list": {
+        "multiTab": "Show work tab",
+        "accordion": "Sidebar opens accordion",
+        "collapseSidebar": "Show sidebar button",
+        "reloadPage": "Show reload page button",
+        "fastEnter": "Show fast enter",
+        "breadcrumb": "Show crumb navigation",
+        "language": "Show multilingual selection",
+        "progressBar": "Show top progress bar",
+        "weakMode": "Color Weakness Mode",
+        "watermark": "Global watermark",
+        "menuWidth": "Menu width",
+        "tabStyle": "Tab style",
+        "pageTransition": "Page animation",
+        "borderRadius": "Custom radius"
+      }
+    },
+    "tabStyle": {
+      "default": "Default",
+      "card": "Card",
+      "google": "Chrome"
+    },
+    "transition": {
+      "list": {
+        "none": "None",
+        "fade": "Fade",
+        "slideLeft": "Slide Left",
+        "slideBottom": "Slide Bottom",
+        "slideTop": "Slide Top"
+      }
+    },
+    "actions": {
+      "resetConfig": "Reset Config",
+      "copyConfig": "Copy Config",
+      "copySuccess": "Configuration copied to clipboard, paste it into src/config/setting.ts file",
+      "copyFailed": "Copy failed, please try again",
+      "resetFailed": "Reset failed, please refresh the page and try again"
+    }
+  },
+  "notice": {
+    "title": "Notice",
+    "btnRead": "Mark as read",
+    "bar": ["Notice", "Message", "Todo"],
+    "text": ["No"],
+    "viewAll": "View all"
+  },
+  "worktab": {
+    "btn": {
+      "refresh": "Refresh",
+      "fixed": "Fixed",
+      "unfixed": "Unfixed",
+      "closeLeft": "Close left",
+      "closeRight": "Close right",
+      "closeOther": "Close other",
+      "closeAll": "Close all"
+    }
+  },
+  "login": {
+    "leftView": {
+      "title": "A backend system of beauty and efficiency",
+      "subTitle": "A sleek and practical interface for a great user experience"
+    },
+    "title": "Welcome back",
+    "subTitle": "Please enter your account and password to login",
+    "roles": {
+      "super": "Super Admin",
+      "operator": "System Admin",
+      "admin": "Admin",
+      "user": "User"
+    },
+    "placeholder": {
+      "username": "Please enter your account",
+      "password": "Please enter your password",
+      "slider": "Please slide to verify"
+    },
+    "sliderText": "Please slide to verify",
+    "sliderSuccessText": "Verification successful",
+    "rememberPwd": "Remember password",
+    "forgetPwd": "Forgot password",
+    "btnText": "Login",
+    "noAccount": "No account yet?",
+    "register": "Register",
+    "success": {
+      "title": "Login successful",
+      "message": "Welcome back"
+    }
+  },
+  "forgetPassword": {
+    "title": "Forgot password?",
+    "subTitle": "Enter your email to reset your password",
+    "placeholder": "Please enter your email",
+    "submitBtnText": "Submit",
+    "backBtnText": "Back"
+  },
+  "register": {
+    "title": "Create account",
+    "subTitle": "Welcome to join us, please fill in the following information to complete the registration",
+    "placeholder": {
+      "username": "Please enter your account",
+      "password": "Please enter your password",
+      "confirmPassword": "Please enter your password again"
+    },
+    "rule": {
+      "confirmPasswordRequired": "Please enter your password again",
+      "passwordMismatch": "The two passwords are inconsistent!",
+      "usernameLength": "The length is 3 to 20 characters",
+      "passwordLength": "The password length cannot be less than 6 digits",
+      "agreementRequired": "Please agree to the privacy policy"
+    },
+    "agreeText": "I agree",
+    "privacyPolicy": "Privacy policy",
+    "submitBtnText": "Register",
+    "hasAccount": "Already have an account?",
+    "toLogin": "To login"
+  },
+  "lockScreen": {
+    "pwdError": "Password error",
+    "lock": {
+      "inputPlaceholder": "Please input lock screen password",
+      "btnText": "Lock"
+    },
+    "unlock": {
+      "inputPlaceholder": "Please input unlock password",
+      "btnText": "Unlock",
+      "backBtnText": "Back to login"
+    }
+  },
+  "greeting": {
+    "dawn": "Good morning!",
+    "morning": "Good morning!",
+    "afternoon": "Good afternoon!",
+    "evening": "Good evening!"
+  },
+  "exceptionPage": {
+    "gohome": "Go Home",
+    "403": "Sorry, you do not have permission to access this page",
+    "404": "Sorry, the page you are trying to access does not exist",
+    "500": "Sorry, there was an error on the server"
+  },
+  "menus": {
+    "login": {
+      "title": "Login"
+    },
+    "register": {
+      "title": "Register"
+    },
+    "forgetPassword": {
+      "title": "Forget Password"
+    },
+    "outside": {
+      "title": "Outside"
+    },
+    "dashboard": {
+      "title": "Dashboard",
+      "console": "Console",
+      "analysis": "Analysis",
+      "ecommerce": "Ecommerce"
+    },
+    "widgets": {
+      "title": "Components",
+      "icon": "Icon",
+      "imageCrop": "Image Crop",
+      "excel": "Excel Import Export",
+      "video": "Video Player",
+      "countTo": "Count To",
+      "wangEditor": "Wang Editor",
+      "watermark": "Watermark",
+      "contextMenu": "Context Menu",
+      "qrcode": "QR Code",
+      "drag": "Drag",
+      "textScroll": "Text Scroll",
+      "fireworks": "Fireworks",
+      "elementUI": "Component Overview"
+    },
+    "template": {
+      "title": "Template Center",
+      "chat": "Chat",
+      "cards": "Cards",
+      "banners": "Banners",
+      "charts": "Charts",
+      "map": "Map",
+      "calendar": "Calendar",
+      "pricing": "Pricing"
+    },
+    "article": {
+      "title": "Article",
+      "articleList": "Article List",
+      "articleDetail": "Article Detail",
+      "comment": "Comment",
+      "articlePublish": "Article Publish"
+    },
+    "result": {
+      "title": "Result Page",
+      "success": "Success",
+      "fail": "Fail"
+    },
+    "exception": {
+      "title": "Exception",
+      "forbidden": "403",
+      "notFound": "404",
+      "serverError": "500"
+    },
+    "examples": {
+      "title": "Feature Examples",
+      "tabs": "Tabs",
+      "tablesBasic": "Basic Tables",
+      "tables": "Advanced Tables",
+      "tablesTree": "Tree Table Layout",
+      "forms": "Forms",
+      "searchBar": "Search Form",
+      "socketChat": "Socket Connection",
+      "permission": {
+        "title": "Frontend Permission",
+        "switchRole": "Toggle Auth",
+        "buttonAuth": "Button Authority",
+        "pageVisibility": "Super Admin Visibility"
+      }
+    },
+    "system": {
+      "title": "System Settings",
+      "user": "User Manage",
+      "role": "Role Manage",
+      "userCenter": "User Center",
+      "menu": "Menu Manage",
+      "announcement": "Announcement Manage",
+      "operationLog": "Log Management",
+      "fileManage": "File Management",
+      "messageCenter": "Messages",
+      "nested": "Nested Menu",
+      "menu1": "Menu 1",
+      "menu2": "Menu 2",
+      "menu21": "Menu 2-1",
+      "menu3": "Menu 3",
+      "menu31": "Menu 3-1",
+      "menu32": "Menu 3-2",
+      "menu321": "Menu 3-2-1"
+    },
+    "safeguard": {
+      "title": "Safeguard",
+      "server": "Server"
+    },
+    "plan": {
+      "title": "Version Plan",
+      "log": "Change Log"
+    },
+    "help": {
+      "title": "Help Center",
+      "document": "Document",
+      "liteVersion": "Lite Version",
+      "oldVersion": "v2.6.1 Version"
+    }
+  },
+  "dashboard": {
+    "comparison": {
+      "lastWeek": "vs. last week",
+      "weekOverWeek": "Week over week"
+    },
+    "cards": {
+      "totalVisits": "Total Visits",
+      "onlineVisitors": "Online Visitors",
+      "pageViews": "Page Views",
+      "newUsers": "New Users"
+    },
+    "userOverview": {
+      "title": "User Overview",
+      "growth": "vs. last week",
+      "description": "Combine the available options to build a polished page for your workflow.",
+      "totalUsers": "Total Users",
+      "totalVisits": "Total Visits",
+      "dailyVisits": "Daily Visits"
+    },
+    "visits": {
+      "title": "Visits",
+      "growthThisYear": "Growth this year"
+    },
+    "months": ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+    "newUsers": {
+      "title": "New Users",
+      "growthThisMonth": "Growth this month",
+      "period": {
+        "currentMonth": "This Month",
+        "lastMonth": "Last Month",
+        "currentYear": "This Year"
+      },
+      "columns": {
+        "avatar": "User",
+        "region": "Region",
+        "gender": "Gender",
+        "progress": "Progress"
+      },
+      "progressAria": "{name}'s progress: {progress}%"
+    },
+    "people": {
+      "xiaoyu": "Xiaoyu Zhong",
+      "xiaohe": "Xiaohe He",
+      "suisuinian": "Suisuinian",
+      "fadaicao": "Fadaicao",
+      "tiantong": "Tiantong",
+      "lengyuedaidai": "Lengyuedaidai"
+    },
+    "regions": {
+      "beijing": "Beijing",
+      "shenzhen": "Shenzhen",
+      "shanghai": "Shanghai",
+      "changsha": "Changsha",
+      "zhejiang": "Zhejiang",
+      "hubei": "Hubei"
+    },
+    "activity": {
+      "title": "Activity",
+      "newCount": "New",
+      "actions": {
+        "followed": "followed",
+        "published": "published",
+        "asked": "asked",
+        "redeemed": "redeemed",
+        "closedQuestion": "closed the question from"
+      },
+      "targets": {
+        "article": "Vue 3 + TypeScript + Vite Practical Notes",
+        "themeQuestion": "Can the theme be configured?",
+        "uniqueLife": "A Unique Life",
+        "sevenHabits": "The 7 Habits of Highly Effective People"
+      }
+    },
+    "todo": {
+      "title": "To-do List",
+      "pending": "Pending",
+      "items": {
+        "reviewWork": "Review today's tasks",
+        "replyEmail": "Reply to emails",
+        "prepareReport": "Prepare the work report",
+        "productMeeting": "Product requirements meeting",
+        "organizeMeeting": "Organize meeting notes",
+        "planTomorrow": "Plan tomorrow's work"
+      },
+      "times": {
+        "morning0930": "09:30 AM",
+        "morning1030": "10:30 AM",
+        "morning1100": "11:00 AM",
+        "afternoon0200": "02:00 PM",
+        "afternoon0330": "03:30 PM",
+        "afternoon0630": "06:30 PM"
+      }
+    },
+    "about": {
+      "title": "About the Project",
+      "description": "{systemName} is an admin system designed for clarity and efficient development.",
+      "technology": "Built with Vue 3, TypeScript, Vite, and Element Plus.",
+      "links": {
+        "website": "Project Website",
+        "docs": "Documentation",
+        "github": "GitHub",
+        "bilibili": "Bilibili"
+      }
+    }
+  },
+  "userCenter": {
+    "profile": {
+      "signature": "Focused on user experience and visual design",
+      "job": "Interaction Designer",
+      "location": "Shenzhen, Guangdong",
+      "company": "Product R&D Center · Experience Design",
+      "tagsTitle": "Tags",
+      "accountInfo": "Account Information",
+      "rolesTitle": "Current Roles",
+      "joinedAt": "Joined",
+      "notSet": "Not provided",
+      "tags": {
+        "design": "Design Focus",
+        "creative": "Creative Thinking",
+        "detail": "Detail Oriented",
+        "collaboration": "Teamwork",
+        "userExperience": "User Experience",
+        "learning": "Continuous Learning"
+      }
+    },
+    "sections": {
+      "basicSettings": "Basic Settings",
+      "changePassword": "Change Password"
+    },
+    "fields": {
+      "username": "Username",
+      "realName": "Name",
+      "gender": "Gender",
+      "nickname": "Nickname",
+      "email": "Email",
+      "phone": "Phone",
+      "avatar": "Avatar",
+      "bio": "Bio",
+      "currentPassword": "Current Password",
+      "newPassword": "New Password",
+      "confirmPassword": "Confirm New Password"
+    },
+    "placeholders": {
+      "selectGender": "Select a gender",
+      "phone": "Enter a phone number",
+      "email": "Enter an email address",
+      "avatarUploadHint": "JPG, PNG, or WebP up to 2MB; the new avatar is saved immediately",
+      "bio": "Tell us about yourself in up to 500 characters",
+      "currentPassword": "Enter your current password",
+      "newPassword": "8 to 64 characters with letters and numbers",
+      "confirmPassword": "Enter the new password again"
+    },
+    "validation": {
+      "realNameRequired": "Enter your name",
+      "realNameLength": "Name must be 2 to 50 characters",
+      "nicknameRequired": "Enter a nickname",
+      "nicknameLength": "Nickname must be 2 to 50 characters",
+      "emailRequired": "Enter an email address",
+      "phoneRequired": "Enter a phone number",
+      "genderRequired": "Select a gender",
+      "emailInvalid": "Enter a valid email address",
+      "phoneInvalid": "Enter a valid phone number",
+      "avatarType": "Avatar must be a JPG, PNG, or WebP image",
+      "avatarSize": "Avatar size cannot exceed 2MB",
+      "bioLength": "Bio cannot exceed 500 characters",
+      "currentPasswordRequired": "Enter your current password",
+      "newPasswordRequired": "Enter a new password",
+      "newPasswordLength": "New password must be 8 to 64 characters",
+      "newPasswordComplexity": "New password must contain both letters and numbers",
+      "confirmPasswordRequired": "Enter the new password again",
+      "passwordMismatch": "The two new passwords do not match"
+    },
+    "actions": {
+      "uploadAvatar": "Change Avatar",
+      "changePassword": "Change Password",
+      "loginAgain": "Log In Again"
+    },
+    "messages": {
+      "loadFailed": "Failed to load your profile",
+      "saveSuccess": "Profile saved successfully",
+      "avatarSuccess": "Avatar changed successfully",
+      "passwordSuccess": "Password changed successfully",
+      "reLogin": "Your password has been updated. Please log in again with the new password."
+    },
+    "sample": {
+      "nickname": "Pikachu",
+      "address": "Room 201, Building 101, Xixiang, Bao'an, Shenzhen",
+      "description": "Passionate about product design and clear, efficient admin experiences."
+    },
+    "greetings": {
+      "earlyMorning": "It is late. Remember to rest",
+      "morning": "Good morning",
+      "lateMorning": "Good morning",
+      "noon": "Good noon",
+      "afternoon": "Good afternoon",
+      "evening": "Good evening"
+    }
+  },
+  "systemManage": {
+    "permissions": {
+      "addUser": "Add User",
+      "editUser": "Edit User",
+      "deactivateUser": "Deactivate User",
+      "addRole": "Add Role",
+      "editRole": "Edit Role",
+      "deleteRole": "Delete Role",
+      "assignMenu": "Assign Menus",
+      "addMenu": "Add Menu",
+      "editMenu": "Edit Menu",
+      "deleteMenu": "Delete Menu",
+      "addAnnouncement": "Add Announcement",
+      "editAnnouncement": "Edit Announcement",
+      "deleteAnnouncement": "Delete Announcement",
+      "publishAnnouncement": "Publish Announcement",
+      "deleteLog": "Delete Log",
+      "clearLog": "Clear Logs",
+      "uploadFile": "Upload File",
+      "downloadFile": "Download File",
+      "deleteFile": "Delete File",
+      "sendMessage": "Send Message",
+      "readMessage": "Mark as Read"
+    },
+    "user": {
+      "addButton": "Add User",
+      "addTitle": "Add User",
+      "editTitle": "Edit User",
+      "deactivateTitle": "Deactivate User",
+      "deactivateConfirm": "Are you sure you want to deactivate this user?",
+      "fields": {
+        "username": "Username",
+        "nickname": "Nickname",
+        "password": "Login Password",
+        "phone": "Phone",
+        "email": "Email",
+        "gender": "Gender",
+        "status": "Status",
+        "roles": "Roles"
+      },
+      "placeholders": {
+        "username": "Enter a username",
+        "loginUsername": "Enter the login username",
+        "nickname": "Enter a nickname",
+        "passwordAdd": "At least 8 characters",
+        "passwordEdit": "Leave blank to keep the current password",
+        "phone": "Enter a phone number",
+        "email": "Enter an email address",
+        "status": "Select a status",
+        "roles": "Select roles"
+      },
+      "validation": {
+        "usernameLength": "Use 2 to 30 characters",
+        "initialPassword": "Enter an initial password",
+        "passwordLength": "The password must contain at least 8 characters",
+        "phone": "Enter a valid phone number",
+        "email": "Enter a valid email address"
+      }
+    },
+    "role": {
+      "addButton": "Add Role",
+      "addTitle": "Add Role",
+      "editTitle": "Edit Role",
+      "deleteTitle": "Delete Role",
+      "deleteConfirm": "Delete role “{name}”? This action cannot be undone.",
+      "deleteCancelled": "Deletion cancelled",
+      "menuPermission": "Menu Permissions",
+      "editAction": "Edit Role",
+      "deleteAction": "Delete Role",
+      "expandAll": "Expand All",
+      "collapseAll": "Collapse All",
+      "selectAll": "Select All",
+      "unselectAll": "Clear Selection",
+      "builtIn": {
+        "super": {
+          "name": "Super Admin",
+          "description": "Has full administrative access"
+        },
+        "admin": {
+          "name": "System Admin",
+          "description": "Handles day-to-day user administration"
+        }
+      },
+      "fields": {
+        "id": "Role ID",
+        "name": "Role Name",
+        "code": "Role Code",
+        "description": "Description",
+        "status": "Role Status",
+        "createdAt": "Created At"
+      },
+      "placeholders": {
+        "name": "Enter a role name",
+        "code": "Enter a role code",
+        "description": "Enter a role description",
+        "status": "Select a status",
+        "dateRange": "Select a date range",
+        "startDate": "Start Date",
+        "endDate": "End Date"
+      },
+      "validation": {
+        "nameLength": "Use 2 to 20 characters",
+        "codeLength": "Use 2 to 50 characters"
+      },
+      "date": {
+        "separator": "to",
+        "today": "Today",
+        "lastWeek": "Last 7 Days",
+        "lastMonth": "Last 30 Days"
+      }
+    },
+    "menu": {
+      "addButton": "Add Menu",
+      "name": "Menu Name",
+      "type": "Menu Type",
+      "route": "Route",
+      "permission": "Permission Mark",
+      "permissionCount": "{count} permission marks",
+      "addPermission": "Add Permission",
+      "loadFailed": "Failed to load menus",
+      "deleteMenuConfirm": "Delete this menu? This action cannot be undone.",
+      "deletePermissionConfirm": "Delete this permission? This action cannot be undone.",
+      "deleteFailed": "Delete failed",
+      "types": {
+        "button": "Button",
+        "directory": "Directory",
+        "iframe": "Embedded",
+        "menu": "Menu",
+        "external": "External Link",
+        "unknown": "Unknown"
+      },
+      "dialog": {
+        "addMenu": "Add Menu",
+        "editMenu": "Edit Menu",
+        "addButton": "Add Button",
+        "editButton": "Edit Button",
+        "root": "Root",
+        "fields": {
+          "nodeType": "Node Type",
+          "parent": "Parent Node",
+          "displayName": "Display Name",
+          "sort": "Sort Order",
+          "permission": "Permission Mark",
+          "enabled": "Enabled",
+          "routeName": "Route Name",
+          "path": "Route Path",
+          "component": "Component Path",
+          "icon": "Icon",
+          "externalLink": "External Link",
+          "textBadge": "Text Badge",
+          "activePath": "Active Path",
+          "keepAlive": "Page Cache",
+          "hidden": "Hide Menu",
+          "hiddenTab": "Hide Tab",
+          "iframe": "Embedded Page",
+          "badge": "Show Badge",
+          "fixedTab": "Fixed Tab",
+          "fullPage": "Full Page"
+        },
+        "placeholders": {
+          "parent": "Select a parent node",
+          "displayName": "For example: User Management or menus.system.user",
+          "permission": "For example: add, edit, delete",
+          "routeName": "For example: User",
+          "path": "Top level: /system; child: user",
+          "component": "For example: /system/user; leave blank for a directory",
+          "icon": "For example: ri:user-line",
+          "externalLink": "Optional, https://...",
+          "textBadge": "Optional, for example: New",
+          "activePath": "Set this when a detail page should highlight its parent menu"
+        },
+        "validation": {
+          "name": "Enter a name",
+          "parent": "Select the parent menu",
+          "routeName": "Enter a route name",
+          "path": "Enter a route path",
+          "permission": "Enter a permission mark"
+        }
+      }
+    },
+    "announcement": {
+      "addButton": "Add Announcement",
+      "addTitle": "Add Announcement",
+      "editTitle": "Edit Announcement",
+      "deleteTitle": "Delete Announcement",
+      "deleteConfirm": "Delete announcement “{title}”? This action cannot be undone.",
+      "publish": "Publish",
+      "unpublish": "Withdraw",
+      "publishTitle": "Publish Announcement",
+      "unpublishTitle": "Withdraw Announcement",
+      "publishConfirm": "Publish announcement “{title}”?",
+      "unpublishConfirm": "Withdraw announcement “{title}” to draft?",
+      "top": "Pinned",
+      "topHint": "Pinned announcements appear first in the list",
+      "fields": {
+        "title": "Title",
+        "content": "Content",
+        "type": "Type",
+        "status": "Status",
+        "top": "Pinned",
+        "publisher": "Publisher",
+        "publishedAt": "Published At",
+        "createdBy": "Created By",
+        "createdAt": "Created At"
+      },
+      "placeholders": {
+        "title": "Enter an announcement title",
+        "content": "Enter announcement content",
+        "type": "Select an announcement type",
+        "status": "Select a publish status"
+      },
+      "types": {
+        "system": "System",
+        "activity": "Activity",
+        "reminder": "Reminder"
+      },
+      "statuses": {
+        "draft": "Draft",
+        "published": "Published"
+      },
+      "validation": {
+        "title": "Enter an announcement title",
+        "content": "Enter announcement content"
+      }
+    },
+    "log": {
+      "clear": "Clear Logs",
+      "deleteConfirm": "Delete this log?",
+      "clearConfirm": "Clear all operation and login logs? This action cannot be undone.",
+      "success": "Success",
+      "failed": "Failed",
+      "logTypes": {
+        "operation": "System Log",
+        "login": "Login Log"
+      },
+      "splitHint": "Switch between system and login logs; only the selected log type is shown.",
+      "operationDescription": "Tracks system create, update, delete operations and their results.",
+      "loginDescription": "Tracks successful logins, authentication failures, and invalid login requests.",
+      "fields": {
+        "logType": "Log Type",
+        "username": "Account",
+        "method": "Method",
+        "path": "API Path",
+        "result": "Result",
+        "statusCode": "Status Code",
+        "ip": "IP Address",
+        "duration": "Duration",
+        "createdAt": "Recorded At"
+      },
+      "placeholders": {
+        "logType": "Select a log type",
+        "username": "Enter an account",
+        "path": "Enter an API path",
+        "method": "Select a method",
+        "result": "Select a result"
+      }
+    },
+    "file": {
+      "upload": "Upload File",
+      "download": "Download",
+      "uploadHint": "Images, PDF, text, archives and Office files up to 20MB",
+      "sizeExceeded": "The file cannot exceed 20MB",
+      "uploadFailed": "File upload failed",
+      "deleteTitle": "Delete File",
+      "deleteConfirm": "Delete “{name}”? Its physical file will also be removed.",
+      "fields": {
+        "name": "File Name",
+        "type": "Content Type",
+        "size": "File Size",
+        "uploader": "Uploader",
+        "createdAt": "Uploaded At"
+      },
+      "placeholders": {
+        "name": "Enter a file name",
+        "type": "Enter a content type"
+      }
+    },
+    "message": {
+      "send": "Send Message",
+      "sendTitle": "Send Notification",
+      "readAll": "Mark All Read",
+      "markRead": "Mark Read",
+      "view": "View",
+      "read": "Read",
+      "unread": "Unread",
+      "allUsers": "All Active Users",
+      "selectedUsers": "Selected Users",
+      "unreadCount": "{count} unread messages",
+      "readAllConfirm": "Mark all messages for the current account as read?",
+      "empty": "No messages",
+      "fields": {
+        "keyword": "Message Title",
+        "title": "Title",
+        "content": "Content",
+        "type": "Type",
+        "scope": "Recipients",
+        "receivers": "Users",
+        "sender": "Sender",
+        "readStatus": "Read Status",
+        "createdAt": "Sent At"
+      },
+      "placeholders": {
+        "keyword": "Enter a message title",
+        "title": "Enter a title",
+        "content": "Enter message content",
+        "type": "Select a message type",
+        "readStatus": "Select a read status",
+        "receivers": "Select recipients"
+      },
+      "types": {
+        "system": "System",
+        "reminder": "Reminder",
+        "task": "Task"
+      },
+      "validation": {
+        "title": "Enter a message title",
+        "content": "Enter message content",
+        "type": "Select a message type",
+        "receivers": "Select at least one recipient"
+      }
+    }
+  },
+  "table": {
+    "form": {
+      "reset": "Reset",
+      "submit": "Submit"
+    },
+    "searchBar": {
+      "reset": "Reset",
+      "search": "Search",
+      "expand": "Expand",
+      "collapse": "Collapse",
+      "searchInputPlaceholder": "Please enter",
+      "searchSelectPlaceholder": "Please select"
+    },
+    "selection": "Select",
+    "sizeOptions": {
+      "small": "Compact",
+      "default": "Default",
+      "large": "Loose"
+    },
+    "column": {
+      "selection": "Select",
+      "expand": "Expand",
+      "index": "Index"
+    },
+    "zebra": "Zebra",
+    "border": "Border",
+    "headerBackground": "Header BG"
+  }
+}
