@@ -39,7 +39,8 @@ class AnnouncementServiceTest {
 
     @BeforeEach
     void setUp() {
-        LoginUser loginUser = new LoginUser(1L, "admin", "password", true, List.of());
+        LoginUser loginUser = new LoginUser(1L, "admin", "password", true,
+                List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("R_SUPER")));
         SecurityContextHolder.getContext().setAuthentication(
                 new UsernamePasswordAuthenticationToken(loginUser, null, List.of())
         );

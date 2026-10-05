@@ -9,6 +9,7 @@ import com.example.managesystem.mapper.SysUserMapper;
 import com.example.managesystem.security.LoginUser;
 import com.example.managesystem.service.AvatarStorageService;
 import com.example.managesystem.service.ProfileService;
+import com.example.managesystem.service.FileTransactions;
 import com.example.managesystem.vo.UserProfileResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -59,7 +60,7 @@ public class ProfileServiceImpl implements ProfileService {
             avatarStorageService.deleteQuietly(storedAvatar.storageName());
             throw exception;
         }
-        avatarStorageService.deleteByUrl(previousAvatar);
+        FileTransactions.afterCommit(() -> avatarStorageService.deleteByUrl(previousAvatar));
         return toResponse(user);
     }
 
@@ -79,6 +80,7 @@ public class ProfileServiceImpl implements ProfileService {
         user.setUpdatedBy(loginUser.username());
         user.setUpdatedAt(LocalDateTime.now());
         userMapper.updateById(user);
+        userMapper.revokeTokens(user.getId());
     }
 
     private UserProfileResponse toResponse(SysUser user) {

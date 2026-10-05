@@ -13,6 +13,7 @@ import com.example.managesystem.mapper.SysRoleMapper;
 import com.example.managesystem.mapper.SysUserMapper;
 import com.example.managesystem.mapper.SysUserRoleMapper;
 import com.example.managesystem.security.SecurityUtils;
+import com.example.managesystem.security.PermissionPolicy;
 import com.example.managesystem.service.UserService;
 import com.example.managesystem.vo.PageResponse;
 import com.example.managesystem.vo.UserListItem;
@@ -38,6 +39,7 @@ public class UserServiceImpl implements UserService {
     private final SysRoleMapper roleMapper;
     private final SysUserRoleMapper userRoleMapper;
     private final PasswordEncoder passwordEncoder;
+    private final PermissionPolicy permissionPolicy;
 
     public PageResponse<UserListItem> page(
             long current,
@@ -85,6 +87,12 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public void update(Long id, UserSaveRequest request) {
         SysUser user = requireUser(id);
+        permissionPolicy.requireAssignable(userRoleMapper.selectRoleIdsByUserId(id));
+        if (BUILT_IN_ADMIN_ID.equals(id) && (!Integer.valueOf(1).equals(request.status())
+                || !user.getUsername().equals(request.userName())
+                || !request.roleIds().equals(userRoleMapper.selectRoleIdsByUserId(id)))) {
+            throw new BusinessException("内置管理员的账号、启用状态和角色不能修改");
+        }
         validateUsernameUnique(id, request.userName());
         validateRoles(request.roleIds());
         applyRequest(user, request);
@@ -95,6 +103,7 @@ public class UserServiceImpl implements UserService {
         user.setUpdatedAt(LocalDateTime.now());
         userMapper.updateById(user);
         replaceRoles(id, request.roleIds());
+        userMapper.revokeTokens(id);
     }
 
     @Transactional
@@ -103,6 +112,10 @@ public class UserServiceImpl implements UserService {
             throw new BusinessException("内置管理员不能注销");
         }
         requireUser(id);
+        if (id.equals(SecurityUtils.currentUser().userId())) {
+            throw new BusinessException("不能注销当前登录账号");
+        }
+        permissionPolicy.requireAssignable(userRoleMapper.selectRoleIdsByUserId(id));
         userRoleMapper.deleteByUserId(id);
         userMapper.deleteById(id);
     }
@@ -155,15 +168,14 @@ public class UserServiceImpl implements UserService {
     }
 
     private void validateUsernameUnique(Long id, String username) {
-        Long count = userMapper.selectCount(new LambdaQueryWrapper<SysUser>()
-                .eq(SysUser::getUsername, username)
-                .ne(id != null, SysUser::getId, id));
+        long count = userMapper.countReservedName(username, id);
         if (count > 0) {
-            throw new BusinessException("用户名已存在");
+            throw new BusinessException("用户名已使用，包含已注销账号，请使用其他用户名");
         }
     }
 
     private void validateRoles(List<Long> roleIds) {
+        permissionPolicy.requireAssignable(roleIds);
         long count = roleMapper.selectCount(new LambdaQueryWrapper<SysRole>()
                 .in(SysRole::getId, roleIds)
                 .eq(SysRole::getEnabled, true));

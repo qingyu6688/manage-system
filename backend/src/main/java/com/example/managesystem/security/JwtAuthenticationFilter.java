@@ -23,6 +23,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider tokenProvider;
     private final CustomUserDetailsService userDetailsService;
+    private final AuthSessionService sessionService;
 
     @Override
     protected void doFilterInternal(
@@ -39,9 +40,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String token = authorization.substring(BEARER_PREFIX.length());
         try {
             if (tokenProvider.isAccessToken(token)) {
-                String username = tokenProvider.getUsername(token);
-                UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-                if (tokenProvider.isValid(token, userDetails)) {
+                LoginUser userDetails = userDetailsService.loadUserById(tokenProvider.getUserId(token));
+                if (tokenProvider.isValid(token, userDetails) && sessionService.isActive(token, userDetails)) {
                     UsernamePasswordAuthenticationToken authentication =
                             new UsernamePasswordAuthenticationToken(
                                     userDetails,

@@ -25,12 +25,12 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/user")
 @RequiredArgsConstructor
-@PreAuthorize("hasAnyAuthority('R_SUPER', 'R_ADMIN')")
 public class UserController {
 
     private final UserService userService;
 
     @GetMapping("/list")
+    @PreAuthorize("hasAuthority('R_SUPER') or hasAuthority('User:read')")
     public ApiResponse<PageResponse<UserListItem>> page(
             @RequestParam(defaultValue = "1") @Min(1) long current,
             @RequestParam(defaultValue = "20") @Min(1) @Max(100) long size,
@@ -52,17 +52,20 @@ public class UserController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAuthority('R_SUPER') or hasAuthority('User:add')")
     public ApiResponse<Long> create(@Valid @RequestBody UserSaveRequest request) {
         return ApiResponse.success("用户创建成功", userService.create(request));
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAuthority('R_SUPER') or hasAuthority('User:edit')")
     public ApiResponse<Void> update(@PathVariable Long id, @Valid @RequestBody UserSaveRequest request) {
         userService.update(id, request);
         return ApiResponse.success();
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAuthority('R_SUPER') or hasAuthority('User:delete')")
     public ApiResponse<Void> delete(@PathVariable Long id) {
         userService.delete(id);
         return ApiResponse.success();

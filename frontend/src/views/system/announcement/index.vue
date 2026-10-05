@@ -31,6 +31,7 @@
 </template>
 
 <script setup lang="ts">
+  import { useAuth } from '@/hooks/core/useAuth'
   import { ElButton, ElMessageBox, ElSpace, ElTag } from 'element-plus'
   import { useI18n } from 'vue-i18n'
   import { useTable } from '@/hooks/core/useTable'
@@ -48,6 +49,7 @@
   type AnnouncementListItem = Api.SystemManage.AnnouncementListItem
 
   const { t } = useI18n()
+  const { hasAuth } = useAuth()
   const dialogType = ref<DialogType>('add')
   const dialogVisible = ref(false)
   const currentAnnouncement = ref<Partial<AnnouncementListItem>>({})
@@ -151,28 +153,32 @@
           fixed: 'right',
           formatter: (row) =>
             h(ElSpace, { size: 4 }, () => [
-              h(
-                ElButton,
-                {
-                  link: true,
-                  type: row.status === 'PUBLISHED' ? 'warning' : 'success',
-                  onClick: () => toggleStatus(row)
-                },
-                () =>
-                  row.status === 'PUBLISHED'
-                    ? t('systemManage.announcement.unpublish')
-                    : t('systemManage.announcement.publish')
-              ),
-              h(
-                ElButton,
-                { link: true, type: 'primary', onClick: () => showDialog('edit', row) },
-                () => t('common.edit')
-              ),
-              h(
-                ElButton,
-                { link: true, type: 'danger', onClick: () => deleteAnnouncement(row) },
-                () => t('common.delete')
-              )
+              hasAuth('publish') &&
+                h(
+                  ElButton,
+                  {
+                    link: true,
+                    type: row.status === 'PUBLISHED' ? 'warning' : 'success',
+                    onClick: () => toggleStatus(row)
+                  },
+                  () =>
+                    row.status === 'PUBLISHED'
+                      ? t('systemManage.announcement.unpublish')
+                      : t('systemManage.announcement.publish')
+                ),
+              hasAuth('edit') &&
+                (row.status !== 'PUBLISHED' || hasAuth('publish')) &&
+                h(
+                  ElButton,
+                  { link: true, type: 'primary', onClick: () => showDialog('edit', row) },
+                  () => t('common.edit')
+                ),
+              hasAuth('delete') &&
+                h(
+                  ElButton,
+                  { link: true, type: 'danger', onClick: () => deleteAnnouncement(row) },
+                  () => t('common.delete')
+                )
             ])
         }
       ]

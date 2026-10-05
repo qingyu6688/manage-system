@@ -10,6 +10,7 @@ import com.example.managesystem.dto.AnnouncementStatusRequest;
 import com.example.managesystem.entity.SysAnnouncement;
 import com.example.managesystem.mapper.SysAnnouncementMapper;
 import com.example.managesystem.security.SecurityUtils;
+import com.example.managesystem.security.PermissionPolicy;
 import com.example.managesystem.service.AnnouncementService;
 import com.example.managesystem.vo.AnnouncementListItem;
 import com.example.managesystem.vo.PageResponse;
@@ -53,6 +54,7 @@ public class AnnouncementServiceImpl implements AnnouncementService {
 
     @Transactional
     public Long create(AnnouncementSaveRequest request) {
+        if (PUBLISHED.equals(request.status())) { requirePublishPermission(); }
         LocalDateTime now = LocalDateTime.now();
         String username = SecurityUtils.currentUsername();
         SysAnnouncement announcement = new SysAnnouncement();
@@ -69,6 +71,9 @@ public class AnnouncementServiceImpl implements AnnouncementService {
     @Transactional
     public void update(Long id, AnnouncementSaveRequest request) {
         SysAnnouncement announcement = requireAnnouncement(id);
+        if (PUBLISHED.equals(announcement.getStatus()) || PUBLISHED.equals(request.status())) {
+            requirePublishPermission();
+        }
         LocalDateTime now = LocalDateTime.now();
         String username = SecurityUtils.currentUsername();
         applyRequest(announcement, request);
@@ -100,6 +105,14 @@ public class AnnouncementServiceImpl implements AnnouncementService {
         announcement.setContent(request.content().trim());
         announcement.setType(request.type());
         announcement.setTop(request.top());
+    }
+
+    private void requirePublishPermission() {
+        var user = SecurityUtils.currentUser();
+        if (!PermissionPolicy.isSuper(user) && user.getAuthorities().stream()
+                .noneMatch(authority -> "Announcement:publish".equals(authority.getAuthority()))) {
+            throw new org.springframework.security.access.AccessDeniedException("发布或修改已发布公告需要发布权限");
+        }
     }
 
     private void applyPublication(

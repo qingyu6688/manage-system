@@ -33,6 +33,7 @@
 </template>
 
 <script setup lang="ts">
+  import { useAuth } from '@/hooks/core/useAuth'
   import FileSaver from 'file-saver'
   import { ElButton, ElMessage, ElMessageBox, ElSpace, ElTag } from 'element-plus'
   import type { UploadProps, UploadRequestOptions } from 'element-plus'
@@ -50,6 +51,7 @@
 
   const MAX_FILE_SIZE = 20 * 1024 * 1024
   const { t } = useI18n()
+  const { hasAuth } = useAuth()
   const uploading = ref(false)
   const searchForm = ref<Api.SystemManage.ManagedFileSearchParams>({})
   const formatDateTime = (value: string) => value?.replace('T', ' ') || '-'
@@ -106,12 +108,14 @@
           fixed: 'right',
           formatter: (row) =>
             h(ElSpace, { size: 4 }, () => [
-              h(ElButton, { link: true, type: 'primary', onClick: () => downloadFile(row) }, () =>
-                t('systemManage.file.download')
-              ),
-              h(ElButton, { link: true, type: 'danger', onClick: () => deleteFile(row) }, () =>
-                t('common.delete')
-              )
+              hasAuth('download') &&
+                h(ElButton, { link: true, type: 'primary', onClick: () => downloadFile(row) }, () =>
+                  t('systemManage.file.download')
+                ),
+              hasAuth('delete') &&
+                h(ElButton, { link: true, type: 'danger', onClick: () => deleteFile(row) }, () =>
+                  t('common.delete')
+                )
             ])
         }
       ]

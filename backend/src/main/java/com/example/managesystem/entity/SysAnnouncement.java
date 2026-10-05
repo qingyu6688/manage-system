@@ -21,7 +21,9 @@ public class SysAnnouncement {
     private String status;
     @TableField("is_top")
     private Boolean top;
+    @TableField(updateStrategy = com.baomidou.mybatisplus.annotation.FieldStrategy.ALWAYS)
     private String publishedBy;
+    @TableField(updateStrategy = com.baomidou.mybatisplus.annotation.FieldStrategy.ALWAYS)
     private LocalDateTime publishedAt;
     private String createdBy;
     private String updatedBy;

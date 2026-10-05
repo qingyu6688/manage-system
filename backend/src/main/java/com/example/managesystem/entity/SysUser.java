@@ -19,12 +19,16 @@ public class SysUser {
     private String nickname;
     private String realName;
     private Integer gender;
+    @com.baomidou.mybatisplus.annotation.TableField(updateStrategy = com.baomidou.mybatisplus.annotation.FieldStrategy.ALWAYS)
     private String phone;
     private String email;
     private String avatar;
     private String address;
+    @com.baomidou.mybatisplus.annotation.TableField(updateStrategy = com.baomidou.mybatisplus.annotation.FieldStrategy.ALWAYS)
     private String bio;
     private Integer status;
+    @com.baomidou.mybatisplus.annotation.TableField(updateStrategy = com.baomidou.mybatisplus.annotation.FieldStrategy.NEVER)
+    private Long tokenVersion;
     private String createdBy;
     private String updatedBy;
     private LocalDateTime createdAt;

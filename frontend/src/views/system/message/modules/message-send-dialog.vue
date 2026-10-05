@@ -78,8 +78,7 @@
 <script setup lang="ts">
   import type { FormInstance, FormRules } from 'element-plus'
   import { useI18n } from 'vue-i18n'
-  import { fetchGetUserList } from '@/api/system-manage'
-  import { fetchSendMessage } from '@/api/operations'
+  import { fetchSendMessage, fetchMessageReceiverOptions } from '@/api/operations'
 
   const props = defineProps<{ modelValue: boolean }>()
   const emit = defineEmits<{
@@ -94,7 +93,7 @@
   const formRef = ref<FormInstance>()
   const submitting = ref(false)
   const userLoading = ref(false)
-  const userOptions = ref<Api.SystemManage.UserListItem[]>([])
+  const userOptions = ref<Pick<Api.SystemManage.UserListItem, 'id' | 'userName' | 'nickName'>[]>([])
   const createInitialForm = (): Api.SystemManage.MessageSendParams => ({
     title: '',
     content: '',
@@ -132,8 +131,7 @@
     if (userOptions.value.length > 0) return
     userLoading.value = true
     try {
-      const result = await fetchGetUserList({ current: 1, size: 100, status: '1' })
-      userOptions.value = result.records
+      userOptions.value = await fetchMessageReceiverOptions()
     } finally {
       userLoading.value = false
     }

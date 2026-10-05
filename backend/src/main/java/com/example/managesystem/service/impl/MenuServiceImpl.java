@@ -162,11 +162,9 @@ public class MenuServiceImpl implements MenuService {
             if (!StringUtils.hasText(request.routeName()) || !StringUtils.hasText(request.path())) {
                 throw new BusinessException("菜单的路由名称和路由地址不能为空");
             }
-            Long duplicated = menuMapper.selectCount(new LambdaQueryWrapper<SysMenu>()
-                    .eq(SysMenu::getRouteName, request.routeName())
-                    .ne(id != null, SysMenu::getId, id));
+            long duplicated = menuMapper.countReservedName(request.routeName(), id);
             if (duplicated > 0) {
-                throw new BusinessException("路由名称已存在");
+                throw new BusinessException("路由名称已使用，包含已删除菜单，请使用其他名称");
             }
         }
     }

@@ -1,5 +1,9 @@
 import request from '@/utils/http'
 
+export function fetchLogout(): Promise<void> {
+  return request.post<void>({ url: '/api/auth/logout' })
+}
+
 /**
  * 登录
  * @param params 登录参数

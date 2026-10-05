@@ -14,6 +14,8 @@ import org.springframework.web.servlet.HandlerInterceptor;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -100,8 +102,7 @@ public class OperationLogInterceptor implements HandlerInterceptor {
         }
         return WRITE_METHODS.contains(request.getMethod())
                 && path.startsWith("/api/")
-                && !path.startsWith("/api/auth/")
-                && !path.startsWith("/api/log");
+                && !path.startsWith("/api/auth/");
     }
 
     private boolean isLoginRequest(HttpServletRequest request) {
@@ -137,7 +138,12 @@ public class OperationLogInterceptor implements HandlerInterceptor {
     private String sanitizeQueryPart(String part) {
         int separatorIndex = part.indexOf('=');
         String key = separatorIndex >= 0 ? part.substring(0, separatorIndex) : part;
-        String normalizedKey = key.toLowerCase(Locale.ROOT);
+        String normalizedKey;
+        try {
+            normalizedKey = URLDecoder.decode(key, StandardCharsets.UTF_8).toLowerCase(Locale.ROOT);
+        } catch (IllegalArgumentException exception) {
+            return "无效参数=***";
+        }
         if (SENSITIVE_QUERY_KEYS.stream().anyMatch(normalizedKey::contains)) {
             return key + "=***";
         }
@@ -145,10 +151,7 @@ public class OperationLogInterceptor implements HandlerInterceptor {
     }
 
     private String resolveIpAddress(HttpServletRequest request) {
-        String forwardedFor = request.getHeader("X-Forwarded-For");
-        if (forwardedFor != null && !forwardedFor.isBlank()) {
-            return forwardedFor.split(",", 2)[0].trim();
-        }
+        // 默认记录直连地址，只有部署层配置可信代理后才解析转发头。
         return request.getRemoteAddr();
     }
 

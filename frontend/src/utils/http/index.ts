@@ -20,6 +20,7 @@ import { ApiStatus } from './status'
 import { HttpError, handleError, showError, showSuccess } from './error'
 import { $t } from '@/locales'
 import { BaseResponse, ErrorDetail } from '@/types'
+import { belongsToSameSession, createSessionRefresher } from './session-refresh'
 
 /** 请求配置常量 */
 const REQUEST_TIMEOUT = 15000
@@ -36,6 +37,8 @@ let unauthorizedTimer: NodeJS.Timeout | null = null
 interface ExtendedAxiosRequestConfig extends AxiosRequestConfig {
   showErrorMessage?: boolean
   showSuccessMessage?: boolean
+  skipAuthRefresh?: boolean
+  authRetried?: boolean
 }
 
 const { VITE_API_URL, VITE_WITH_CREDENTIALS } = import.meta.env
@@ -87,7 +90,7 @@ axiosInstance.interceptors.response.use(
     if (response.data instanceof Blob) return response
     const { code, msg, error } = response.data
     if (code === ApiStatus.success) return response
-    if (code === ApiStatus.unauthorized) handleUnauthorizedError(msg, error)
+    if (code === ApiStatus.unauthorized) return recoverSession(response.config, msg, error)
     throw new HttpError(msg || $t('httpMsg.requestFailed'), code, {
       data: response.data,
       url: response.config.url,
@@ -97,11 +100,57 @@ axiosInstance.interceptors.response.use(
   },
   (error) => {
     if (error.response?.status === ApiStatus.unauthorized) {
-      handleUnauthorizedError(error.response?.data?.msg, error.response?.data?.error)
+      return recoverSession(error.config, error.response?.data?.msg, error.response?.data?.error)
     }
     return Promise.reject(handleError(error))
   }
 )
+
+const refreshSession = createSessionRefresher({
+  currentRefreshToken: () => useUserStore().refreshToken,
+  renew: async (refreshToken) => {
+    const config: ExtendedAxiosRequestConfig = {
+      method: 'POST',
+      url: '/api/auth/refresh',
+      data: { refreshToken },
+      skipAuthRefresh: true
+    }
+    const response = await axiosInstance.request<BaseResponse<Api.Auth.LoginResponse>>(config)
+    return response.data.data
+  },
+  save: (tokens) => useUserStore().setToken(tokens.token, tokens.refreshToken)
+})
+
+async function recoverSession(
+  config: ExtendedAxiosRequestConfig,
+  message?: string,
+  detail?: ErrorDetail
+): Promise<AxiosResponse> {
+  if (config.skipAuthRefresh || config.url === '/api/auth/login') {
+    throw new HttpError(message || $t('httpMsg.unauthorized'), ApiStatus.unauthorized)
+  }
+  const store = useUserStore()
+  const sentToken = String(config.headers?.Authorization || '').replace(/^Bearer /, '')
+  if (!belongsToSameSession(sentToken, store.accessToken)) {
+    if (sentToken === store.accessToken) handleUnauthorizedError(message, detail)
+    throw new HttpError('登录状态已变化，请重新操作', ApiStatus.unauthorized)
+  }
+  if (!config.authRetried && store.refreshToken) {
+    const originalRefresh = store.refreshToken
+    try {
+      // 较晚返回的旧令牌 401 可以直接使用其他请求已经刷新的令牌。
+      if (sentToken === store.accessToken) await refreshSession()
+    } catch (error) {
+      if (store.refreshToken !== originalRefresh) throw error
+      handleUnauthorizedError(message, detail)
+    }
+    if (!belongsToSameSession(sentToken, store.accessToken)) {
+      throw new HttpError('登录状态已变化，请重新操作', ApiStatus.unauthorized)
+    }
+    return axiosInstance.request({ ...config, authRetried: true } as ExtendedAxiosRequestConfig)
+  }
+  return handleUnauthorizedError(message, detail)
+}
 
 /** 统一创建HttpError */
 function createHttpError(message: string, code: number) {
@@ -174,7 +223,7 @@ function delay(ms: number) {
 }
 
 /** 请求函数 */
-async function request<T = any>(config: ExtendedAxiosRequestConfig): Promise<T> {
+async function request<T = unknown>(config: ExtendedAxiosRequestConfig): Promise<T> {
   // POST | PUT 参数自动填充
   if (
     ['POST', 'PUT'].includes(config.method?.toUpperCase() || '') &&

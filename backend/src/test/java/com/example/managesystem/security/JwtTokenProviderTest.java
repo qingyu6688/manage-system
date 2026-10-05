@@ -42,6 +42,16 @@ class JwtTokenProviderTest {
     }
 
     @Test
+    void shouldRejectDisabledVersionChangedAndDifferentUserId() {
+        JwtTokenProvider provider = new JwtTokenProvider(TEST_SECRET, 30, 7);
+        LoginUser user = new LoginUser(1L, "same-name", "hash", true, List.of(), 3);
+        String token = provider.createAccessToken(user);
+        assertFalse(provider.isValid(token, new LoginUser(1L, "same-name", "hash", false, List.of(), 3)));
+        assertFalse(provider.isValid(token, new LoginUser(1L, "same-name", "hash", true, List.of(), 4)));
+        assertFalse(provider.isValid(token, new LoginUser(2L, "same-name", "hash", true, List.of(), 3)));
+    }
+
+    @Test
     void seededAdminPasswordShouldMatchDocumentation() {
         assertTrue(new BCryptPasswordEncoder().matches("Admin@123", SEEDED_PASSWORD_HASH));
     }

@@ -60,7 +60,7 @@ public class RoleController {
     }
 
     @GetMapping("/options")
-    @PreAuthorize("hasAnyAuthority('R_SUPER', 'R_ADMIN')")
+    @PreAuthorize("hasAuthority('R_SUPER') or hasAuthority('User:add') or hasAuthority('User:edit')")
     public ApiResponse<List<RoleOption>> options() {
         return ApiResponse.success(roleService.options());
     }

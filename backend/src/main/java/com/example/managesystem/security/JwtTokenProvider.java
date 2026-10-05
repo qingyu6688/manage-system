@@ -12,6 +12,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
+import java.util.UUID;
 
 @Component
 public class JwtTokenProvider {
@@ -34,12 +35,26 @@ public class JwtTokenProvider {
     }
 
     public String createAccessToken(LoginUser user) {
-        return createToken(user.getUsername(), user.userId(), "access", accessTokenDuration);
+        return createAccessToken(user, UUID.randomUUID().toString());
     }
 
     public String createRefreshToken(LoginUser user) {
-        return createToken(user.getUsername(), user.userId(), "refresh", refreshTokenDuration);
+        return createRefreshToken(user, UUID.randomUUID().toString());
     }
+
+    public String createAccessToken(LoginUser user, String sessionId) {
+        return createToken(user, sessionId, "access", accessTokenDuration);
+    }
+
+    public String createRefreshToken(LoginUser user, String sessionId) {
+        return createToken(user, sessionId, "refresh", refreshTokenDuration);
+    }
+
+    public Long getUserId(String token) { return parseClaims(token).get("userId", Long.class); }
+
+    public String getSessionId(String token) { return parseClaims(token).get("sid", String.class); }
+
+    public Instant getExpiration(String token) { return parseClaims(token).getExpiration().toInstant(); }
 
     public String getUsername(String token) {
         return parseClaims(token).getSubject();
@@ -55,15 +70,22 @@ public class JwtTokenProvider {
 
     public boolean isValid(String token, UserDetails userDetails) {
         Claims claims = parseClaims(token);
-        return claims.getSubject().equals(userDetails.getUsername())
+        return userDetails instanceof LoginUser user && user.isEnabled()
+                && user.userId().equals(claims.get("userId", Long.class))
+                && Long.valueOf(user.tokenVersion()).equals(claims.get("ver", Long.class))
+                && claims.get("sid", String.class) != null
+                && claims.getSubject().equals(userDetails.getUsername())
                 && claims.getExpiration().after(new Date());
     }
 
-    private String createToken(String username, Long userId, String type, Duration duration) {
+    private String createToken(LoginUser user, String sessionId, String type, Duration duration) {
         Instant now = Instant.now();
         return Jwts.builder()
-                .subject(username)
-                .claim("userId", userId)
+                .subject(user.getUsername())
+                .id(UUID.randomUUID().toString())
+                .claim("userId", user.userId())
+                .claim("ver", user.tokenVersion())
+                .claim("sid", sessionId)
                 .claim("type", type)
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(now.plus(duration)))
