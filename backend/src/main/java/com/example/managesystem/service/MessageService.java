@@ -5,6 +5,7 @@ import com.example.managesystem.vo.MessageListItem;
 import com.example.managesystem.vo.PageResponse;
 
 public interface MessageService {
+    java.util.List<com.example.managesystem.vo.MessageReceiverOption> receiverOptions(String keyword);
 
     PageResponse<MessageListItem> page(
             Long userId,

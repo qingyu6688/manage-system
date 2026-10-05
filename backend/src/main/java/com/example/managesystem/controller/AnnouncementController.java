@@ -26,12 +26,12 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/announcement")
 @RequiredArgsConstructor
-@PreAuthorize("hasAnyAuthority('R_SUPER', 'R_ADMIN')")
 public class AnnouncementController {
 
     private final AnnouncementService announcementService;
 
     @GetMapping("/list")
+    @PreAuthorize("hasAuthority('R_SUPER') or hasAuthority('Announcement:read')")
     public ApiResponse<PageResponse<AnnouncementListItem>> page(
             @RequestParam(defaultValue = "1") @Min(1) long current,
             @RequestParam(defaultValue = "20") @Min(1) @Max(100) long size,
@@ -43,11 +43,13 @@ public class AnnouncementController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAuthority('R_SUPER') or hasAuthority('Announcement:add')")
     public ApiResponse<Long> create(@Valid @RequestBody AnnouncementSaveRequest request) {
         return ApiResponse.success("公告创建成功", announcementService.create(request));
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAuthority('R_SUPER') or hasAuthority('Announcement:edit')")
     public ApiResponse<Void> update(
             @PathVariable Long id,
             @Valid @RequestBody AnnouncementSaveRequest request
@@ -57,6 +59,7 @@ public class AnnouncementController {
     }
 
     @PutMapping("/{id}/status")
+    @PreAuthorize("hasAuthority('R_SUPER') or hasAuthority('Announcement:publish')")
     public ApiResponse<Void> updateStatus(
             @PathVariable Long id,
             @Valid @RequestBody AnnouncementStatusRequest request
@@ -66,6 +69,7 @@ public class AnnouncementController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAuthority('R_SUPER') or hasAuthority('Announcement:delete')")
     public ApiResponse<Void> delete(@PathVariable Long id) {
         announcementService.delete(id);
         return ApiResponse.success();

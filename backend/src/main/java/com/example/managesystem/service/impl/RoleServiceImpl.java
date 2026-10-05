@@ -15,6 +15,7 @@ import com.example.managesystem.mapper.SysRoleMapper;
 import com.example.managesystem.mapper.SysRoleMenuMapper;
 import com.example.managesystem.mapper.SysUserRoleMapper;
 import com.example.managesystem.service.RoleService;
+import com.example.managesystem.security.PermissionPolicy;
 import com.example.managesystem.vo.PageResponse;
 import com.example.managesystem.vo.RoleListItem;
 import com.example.managesystem.vo.RoleOption;
@@ -38,6 +39,7 @@ public class RoleServiceImpl implements RoleService {
     private final SysMenuMapper menuMapper;
     private final SysRoleMenuMapper roleMenuMapper;
     private final SysUserRoleMapper userRoleMapper;
+    private final PermissionPolicy permissionPolicy;
 
     public PageResponse<RoleListItem> page(
             long current,
@@ -67,6 +69,7 @@ public class RoleServiceImpl implements RoleService {
                         .eq(SysRole::getEnabled, true)
                         .orderByAsc(SysRole::getId))
                 .stream()
+                .filter(this::canAssign)
                 .map(role -> new RoleOption(role.getId(), role.getName(), role.getCode()))
                 .toList();
     }
@@ -90,6 +93,9 @@ public class RoleServiceImpl implements RoleService {
     @Transactional
     public void update(Long id, RoleSaveRequest request) {
         SysRole role = requireRole(id);
+        if (SUPER_ROLE_CODE.equals(role.getCode()) && Boolean.FALSE.equals(request.enabled())) {
+            throw new BusinessException("不能停用内置超级管理员角色");
+        }
         if (SUPER_ROLE_CODE.equals(role.getCode()) && !SUPER_ROLE_CODE.equals(request.roleCode())) {
             throw new BusinessException("内置超级管理员角色编码不能修改");
         }
@@ -117,6 +123,9 @@ public class RoleServiceImpl implements RoleService {
     @Transactional
     public void updateMenus(Long roleId, List<Long> menuIds) {
         SysRole role = requireRole(roleId);
+        if (SUPER_ROLE_CODE.equals(role.getCode())) {
+            throw new BusinessException("超级管理员默认拥有全部菜单，无需单独授权");
+        }
         List<Long> distinctIds = menuIds.stream().distinct().toList();
         if (!distinctIds.isEmpty()) {
             long menuCount = menuMapper.selectCount(new LambdaQueryWrapper<SysMenu>()
@@ -149,11 +158,9 @@ public class RoleServiceImpl implements RoleService {
     }
 
     private void validateCodeUnique(Long id, String code) {
-        Long count = roleMapper.selectCount(new LambdaQueryWrapper<SysRole>()
-                .eq(SysRole::getCode, code)
-                .ne(id != null, SysRole::getId, id));
+        long count = roleMapper.countReservedCode(code, id);
         if (count > 0) {
-            throw new BusinessException("角色编码已存在");
+            throw new BusinessException("角色编码已使用，包含已删除角色，请使用其他编码");
         }
     }
 
@@ -162,5 +169,14 @@ public class RoleServiceImpl implements RoleService {
         role.setCode(request.roleCode());
         role.setDescription(request.description());
         role.setEnabled(request.enabled() == null || request.enabled());
+    }
+
+    private boolean canAssign(SysRole role) {
+        try {
+            permissionPolicy.requireAssignable(List.of(role.getId()));
+            return true;
+        } catch (org.springframework.security.access.AccessDeniedException exception) {
+            return false;
+        }
     }
 }

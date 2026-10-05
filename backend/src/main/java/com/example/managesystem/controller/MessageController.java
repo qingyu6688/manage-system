@@ -30,6 +30,13 @@ public class MessageController {
 
     private final MessageService messageService;
 
+    @GetMapping("/receivers")
+    @PreAuthorize("hasAuthority('R_SUPER') or hasAuthority('MessageCenter:send')")
+    public ApiResponse<java.util.List<com.example.managesystem.vo.MessageReceiverOption>> receivers(
+            @RequestParam(required = false) String keyword) {
+        return ApiResponse.success(messageService.receiverOptions(keyword));
+    }
+
     @GetMapping("/list")
     public ApiResponse<PageResponse<MessageListItem>> page(
             @AuthenticationPrincipal LoginUser loginUser,
@@ -55,7 +62,7 @@ public class MessageController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyAuthority('R_SUPER', 'R_ADMIN')")
+    @PreAuthorize("hasAuthority('R_SUPER') or hasAuthority('MessageCenter:send')")
     public ApiResponse<Long> send(@Valid @RequestBody MessageSendRequest request) {
         return ApiResponse.success("消息发送成功", messageService.send(request));
     }

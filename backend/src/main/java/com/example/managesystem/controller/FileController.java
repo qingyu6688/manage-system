@@ -29,12 +29,12 @@ import java.nio.charset.StandardCharsets;
 @RestController
 @RequestMapping("/api/file")
 @RequiredArgsConstructor
-@PreAuthorize("hasAnyAuthority('R_SUPER', 'R_ADMIN')")
 public class FileController {
 
     private final FileService fileService;
 
     @GetMapping("/list")
+    @PreAuthorize("hasAuthority('R_SUPER') or hasAuthority('FileManage:read')")
     public ApiResponse<PageResponse<FileListItem>> page(
             @RequestParam(defaultValue = "1") @Min(1) long current,
             @RequestParam(defaultValue = "20") @Min(1) @Max(100) long size,
@@ -45,11 +45,13 @@ public class FileController {
     }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasAuthority('R_SUPER') or hasAuthority('FileManage:upload')")
     public ApiResponse<FileListItem> upload(@RequestParam("file") MultipartFile file) {
         return ApiResponse.success("文件上传成功", fileService.upload(file));
     }
 
     @GetMapping("/{id}/download")
+    @PreAuthorize("hasAuthority('R_SUPER') or hasAuthority('FileManage:download')")
     public ResponseEntity<Resource> download(@PathVariable Long id) {
         FileService.FileDownload download = fileService.download(id);
         String contentDisposition = ContentDisposition.attachment()
@@ -70,6 +72,7 @@ public class FileController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAuthority('R_SUPER') or hasAuthority('FileManage:delete')")
     public ApiResponse<Void> delete(@PathVariable Long id) {
         fileService.delete(id);
         return ApiResponse.success();

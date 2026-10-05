@@ -64,8 +64,11 @@
   import { ElTag, ElMessageBox } from 'element-plus'
   import { useI18n } from 'vue-i18n'
   import { formatRoleDescription, formatRoleName } from '@/utils/system-manage'
+  import { isHandledRejection } from '@/utils/http/error'
 
   defineOptions({ name: 'Role' })
+
+  const SUPER_ROLE_CODE = 'R_SUPER'
 
   type RoleListItem = Api.SystemManage.RoleListItem
   type RoleSearchFormParams = Api.SystemManage.RoleSearchParams & {
@@ -165,11 +168,16 @@
             h('div', [
               h(ArtButtonMore, {
                 list: [
-                  {
-                    key: 'permission',
-                    label: t('systemManage.role.menuPermission'),
-                    icon: 'ri:user-3-line'
-                  },
+                  // 超级管理员默认拥有全部菜单，后端也不接受对其单独授权
+                  ...(row.roleCode === SUPER_ROLE_CODE
+                    ? []
+                    : [
+                        {
+                          key: 'permission',
+                          label: t('systemManage.role.menuPermission'),
+                          icon: 'ri:user-3-line'
+                        }
+                      ]),
                   {
                     key: 'edit',
                     label: t('systemManage.role.editAction'),
@@ -246,8 +254,13 @@
         await fetchDeleteRole(row.roleId)
         await refreshData()
       })
-      .catch(() => {
-        ElMessage.info(t('systemManage.role.deleteCancelled'))
+      .catch((error: unknown) => {
+        // 只有用户主动取消才提示“已取消”，接口失败时请求层已经弹过错误
+        if (error === 'cancel' || error === 'close') {
+          ElMessage.info(t('systemManage.role.deleteCancelled'))
+          return
+        }
+        if (!isHandledRejection(error)) throw error
       })
   }
 </script>

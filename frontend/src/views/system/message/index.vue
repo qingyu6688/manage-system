@@ -57,6 +57,7 @@
   } from '@/api/operations'
   import MessageSearch from './modules/message-search.vue'
   import MessageSendDialog from './modules/message-send-dialog.vue'
+  import { isHandledRejection } from '@/utils/http/error'
 
   defineOptions({ name: 'MessageCenter' })
 
@@ -193,10 +194,14 @@
         confirmButtonText: t('common.confirm'),
         cancelButtonText: t('common.cancel')
       }
-    ).then(async () => {
-      await fetchReadAllMessages()
-      await refreshAll()
-    })
+    )
+      .then(async () => {
+        await fetchReadAllMessages()
+        await refreshAll()
+      })
+      .catch((error: unknown) => {
+        if (!isHandledRejection(error)) throw error
+      })
   }
 
   onMounted(loadUnreadCount)

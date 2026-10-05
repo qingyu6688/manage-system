@@ -2,9 +2,6 @@ CREATE DATABASE IF NOT EXISTS manage_system
     DEFAULT CHARACTER SET utf8mb4
     DEFAULT COLLATE utf8mb4_unicode_ci;
 
-USE manage_system;
-
--- 表结构与初始数据由 Flyway 迁移维护。
--- 手动初始化时，请按顺序执行：
--- 1. backend/src/main/resources/db/migration/V1__init_schema.sql
--- 2. backend/src/main/resources/db/migration/V2__seed_data.sql
+-- 只需要创建空库。表结构和初始数据由后端启动时的 Flyway 按版本自动执行，
+-- 不要手动执行 backend/src/main/resources/db/migration/ 下的迁移文件：
+-- 手动建表后库里没有 flyway_schema_history，后端启动会因“非空库缺少迁移历史”而拒绝启动。

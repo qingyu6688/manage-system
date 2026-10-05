@@ -20,6 +20,8 @@ import { ApiStatus } from './status'
 import { HttpError, handleError, showError, showSuccess } from './error'
 import { $t } from '@/locales'
 import { BaseResponse, ErrorDetail } from '@/types'
+import { belongsToSameSession, createSessionRefresher } from './session-refresh'
+import { parseBlobError } from './blob-error'
 
 /** 请求配置常量 */
 const REQUEST_TIMEOUT = 15000
@@ -36,6 +38,8 @@ let unauthorizedTimer: NodeJS.Timeout | null = null
 interface ExtendedAxiosRequestConfig extends AxiosRequestConfig {
   showErrorMessage?: boolean
   showSuccessMessage?: boolean
+  skipAuthRefresh?: boolean
+  authRetried?: boolean
 }
 
 const { VITE_API_URL, VITE_WITH_CREDENTIALS } = import.meta.env
@@ -87,7 +91,7 @@ axiosInstance.interceptors.response.use(
     if (response.data instanceof Blob) return response
     const { code, msg, error } = response.data
     if (code === ApiStatus.success) return response
-    if (code === ApiStatus.unauthorized) handleUnauthorizedError(msg, error)
+    if (code === ApiStatus.unauthorized) return recoverSession(response.config, msg, error)
     throw new HttpError(msg || $t('httpMsg.requestFailed'), code, {
       data: response.data,
       url: response.config.url,
@@ -97,11 +101,57 @@ axiosInstance.interceptors.response.use(
   },
   (error) => {
     if (error.response?.status === ApiStatus.unauthorized) {
-      handleUnauthorizedError(error.response?.data?.msg, error.response?.data?.error)
+      return recoverSession(error.config, error.response?.data?.msg, error.response?.data?.error)
     }
     return Promise.reject(handleError(error))
   }
 )
+
+const refreshSession = createSessionRefresher({
+  currentRefreshToken: () => useUserStore().refreshToken,
+  renew: async (refreshToken) => {
+    const config: ExtendedAxiosRequestConfig = {
+      method: 'POST',
+      url: '/api/auth/refresh',
+      data: { refreshToken },
+      skipAuthRefresh: true
+    }
+    const response = await axiosInstance.request<BaseResponse<Api.Auth.LoginResponse>>(config)
+    return response.data.data
+  },
+  save: (tokens) => useUserStore().setToken(tokens.token, tokens.refreshToken)
+})
+
+async function recoverSession(
+  config: ExtendedAxiosRequestConfig,
+  message?: string,
+  detail?: ErrorDetail
+): Promise<AxiosResponse> {
+  if (config.skipAuthRefresh || config.url === '/api/auth/login') {
+    throw new HttpError(message || $t('httpMsg.unauthorized'), ApiStatus.unauthorized)
+  }
+  const store = useUserStore()
+  const sentToken = String(config.headers?.Authorization || '').replace(/^Bearer /, '')
+  if (!belongsToSameSession(sentToken, store.accessToken)) {
+    if (sentToken === store.accessToken) handleUnauthorizedError(message, detail)
+    throw new HttpError('登录状态已变化，请重新操作', ApiStatus.unauthorized)
+  }
+  if (!config.authRetried && store.refreshToken) {
+    const originalRefresh = store.refreshToken
+    try {
+      // 较晚返回的旧令牌 401 可以直接使用其他请求已经刷新的令牌。
+      if (sentToken === store.accessToken) await refreshSession()
+    } catch (error) {
+      if (store.refreshToken !== originalRefresh) throw error
+      handleUnauthorizedError(message, detail)
+    }
+    if (!belongsToSameSession(sentToken, store.accessToken)) {
+      throw new HttpError('登录状态已变化，请重新操作', ApiStatus.unauthorized)
+    }
+    return axiosInstance.request({ ...config, authRetried: true } as ExtendedAxiosRequestConfig)
+  }
+  return handleUnauthorizedError(message, detail)
+}
 
 /** 统一创建HttpError */
 function createHttpError(message: string, code: number) {
@@ -174,7 +224,7 @@ function delay(ms: number) {
 }
 
 /** 请求函数 */
-async function request<T = any>(config: ExtendedAxiosRequestConfig): Promise<T> {
+async function request<T = unknown>(config: ExtendedAxiosRequestConfig): Promise<T> {
   // POST | PUT 参数自动填充
   if (
     ['POST', 'PUT'].includes(config.method?.toUpperCase() || '') &&
@@ -203,7 +253,10 @@ async function request<T = any>(config: ExtendedAxiosRequestConfig): Promise<T> 
   }
 }
 
-/** 下载二进制文件，跳过业务响应结构解析 */
+/**
+ * 下载二进制文件，跳过业务响应结构解析。
+ * 后端业务错误（如文件已被移除）以 HTTP 200 + JSON 返回，需要识别出来，不能当成文件保存。
+ */
 async function download(config: ExtendedAxiosRequestConfig): Promise<Blob> {
   try {
     const response = await axiosInstance.request<Blob>({
@@ -211,13 +264,39 @@ async function download(config: ExtendedAxiosRequestConfig): Promise<Blob> {
       method: config.method || 'GET',
       responseType: 'blob'
     })
+    const blobError = await parseBlobError(response.data)
+    if (blobError) {
+      throw new HttpError(blobError.msg || $t('httpMsg.requestFailed'), blobError.code, {
+        data: blobError,
+        url: config.url,
+        method: config.method?.toUpperCase() || 'GET',
+        error: blobError.error
+      })
+    }
     return response.data
   } catch (error) {
-    if (error instanceof HttpError && error.code !== ApiStatus.unauthorized) {
-      showError(error, config.showErrorMessage !== false)
+    const httpError = await normalizeBlobHttpError(error, config)
+    if (httpError instanceof HttpError && httpError.code !== ApiStatus.unauthorized) {
+      showError(httpError, config.showErrorMessage !== false)
     }
-    return Promise.reject(error)
+    return Promise.reject(httpError)
   }
+}
+
+/** HTTP 层错误（403、500 等）的响应体在 blob 模式下也是 Blob，需要转换后才能拿到后端提示 */
+async function normalizeBlobHttpError(
+  error: unknown,
+  config: ExtendedAxiosRequestConfig
+): Promise<unknown> {
+  if (!(error instanceof HttpError) || !(error.data instanceof Blob)) return error
+  const blobError = await parseBlobError(error.data)
+  if (!blobError) return error
+  return new HttpError(blobError.msg || error.message, blobError.code, {
+    data: blobError,
+    url: config.url,
+    method: config.method?.toUpperCase() || 'GET',
+    error: blobError.error
+  })
 }
 
 /** API方法集合 */

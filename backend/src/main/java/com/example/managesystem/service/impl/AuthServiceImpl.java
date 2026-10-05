@@ -6,7 +6,9 @@ import com.example.managesystem.dto.LoginRequest;
 import com.example.managesystem.mapper.SysUserMapper;
 import com.example.managesystem.security.CustomUserDetailsService;
 import com.example.managesystem.security.JwtTokenProvider;
+import com.example.managesystem.security.LoginAttemptGuard;
 import com.example.managesystem.security.LoginUser;
+import com.example.managesystem.security.AuthSessionService;
 import com.example.managesystem.service.AuthService;
 import com.example.managesystem.vo.LoginResponse;
 import com.example.managesystem.vo.UserInfoResponse;
@@ -28,17 +30,23 @@ public class AuthServiceImpl implements AuthService {
     private final JwtTokenProvider tokenProvider;
     private final CustomUserDetailsService userDetailsService;
     private final SysUserMapper userMapper;
+    private final AuthSessionService sessionService;
+    private final LoginAttemptGuard loginAttemptGuard;
 
-    public LoginResponse login(LoginRequest request) {
+    public LoginResponse login(LoginRequest request, String clientAddress) {
+        loginAttemptGuard.checkAllowed(request.userName(), clientAddress);
+        LoginUser loginUser;
         try {
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(request.userName(), request.password())
             );
-            LoginUser loginUser = (LoginUser) authentication.getPrincipal();
-            return createTokens(loginUser);
+            loginUser = (LoginUser) authentication.getPrincipal();
         } catch (AuthenticationException exception) {
+            loginAttemptGuard.recordFailure(request.userName(), clientAddress);
             throw new BusinessException(400, "用户名或密码错误");
         }
+        loginAttemptGuard.recordSuccess(request.userName(), clientAddress);
+        return sessionService.create(loginUser);
     }
 
     public LoginResponse refresh(String refreshToken) {
@@ -46,13 +54,11 @@ public class AuthServiceImpl implements AuthService {
             if (!tokenProvider.isRefreshToken(refreshToken)) {
                 throw new BusinessException(ErrorCode.AUTHENTICATION_REQUIRED, "刷新令牌无效");
             }
-            LoginUser loginUser = (LoginUser) userDetailsService.loadUserByUsername(
-                    tokenProvider.getUsername(refreshToken)
-            );
+            LoginUser loginUser = userDetailsService.loadUserById(tokenProvider.getUserId(refreshToken));
             if (!tokenProvider.isValid(refreshToken, loginUser)) {
                 throw new BusinessException(ErrorCode.AUTHENTICATION_REQUIRED, "刷新令牌已失效");
             }
-            return createTokens(loginUser);
+            return sessionService.rotate(loginUser, refreshToken);
         } catch (JwtException | IllegalArgumentException | AuthenticationException exception) {
             throw new BusinessException(ErrorCode.AUTHENTICATION_REQUIRED, "刷新令牌已失效");
         }
@@ -75,10 +81,4 @@ public class AuthServiceImpl implements AuthService {
         );
     }
 
-    private LoginResponse createTokens(LoginUser loginUser) {
-        return new LoginResponse(
-                tokenProvider.createAccessToken(loginUser),
-                tokenProvider.createRefreshToken(loginUser)
-        );
-    }
 }

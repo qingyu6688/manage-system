@@ -113,6 +113,7 @@
   import CryptoJS from 'crypto-js'
   import { useUserStore } from '@/store/modules/user'
   import { mittBus } from '@/utils/sys'
+  import { logoutWithRevoke } from '@/utils/sys/logout'
 
   // 国际化
   const { t } = useI18n()
@@ -400,7 +401,8 @@
   }
 
   const toLogin = () => {
-    userStore.logOut()
+    // 从锁屏页返回登录同样要撤销服务端会话，否则旧令牌在有效期内仍可继续使用
+    logoutWithRevoke()
   }
 
   const openLockScreen = () => {

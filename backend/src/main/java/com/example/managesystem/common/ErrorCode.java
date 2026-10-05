@@ -7,6 +7,7 @@ public enum ErrorCode {
     ACCESS_DENIED(403, ErrorType.AUTHORIZATION, "没有权限执行该操作"),
     RESOURCE_NOT_FOUND(404, ErrorType.RESOURCE, "请求的资源不存在"),
     METHOD_NOT_ALLOWED(405, ErrorType.VALIDATION, "请求方法不支持"),
+    TOO_MANY_LOGIN_ATTEMPTS(429, ErrorType.AUTHENTICATION, "登录失败次数过多，请稍后再试"),
     BUSINESS_ERROR(400, ErrorType.BUSINESS, "业务处理失败"),
     FILE_STORAGE_ERROR(500, ErrorType.SYSTEM, "文件存储处理失败，请稍后重试"),
     DATA_ACCESS_ERROR(500, ErrorType.SYSTEM, "数据访问失败，请稍后重试"),

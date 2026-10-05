@@ -5,6 +5,7 @@ import com.example.managesystem.config.OperationLogInterceptor;
 import com.example.managesystem.dto.LoginRequest;
 import com.example.managesystem.dto.RefreshTokenRequest;
 import com.example.managesystem.security.LoginUser;
+import com.example.managesystem.security.AuthSessionService;
 import com.example.managesystem.service.AuthService;
 import com.example.managesystem.vo.LoginResponse;
 import com.example.managesystem.vo.UserInfoResponse;
@@ -24,6 +25,13 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
     private final AuthService authService;
+    private final AuthSessionService sessionService;
+
+    @PostMapping("/auth/logout")
+    public ApiResponse<Void> logout(@AuthenticationPrincipal LoginUser user, HttpServletRequest request) {
+        sessionService.revoke(request.getHeader("Authorization").substring("Bearer ".length()), user);
+        return ApiResponse.success();
+    }
 
     @PostMapping("/auth/login")
     public ApiResponse<LoginResponse> login(
@@ -34,7 +42,7 @@ public class AuthController {
                 OperationLogInterceptor.LOGIN_USERNAME_ATTRIBUTE,
                 loginRequest.userName()
         );
-        return ApiResponse.success("登录成功", authService.login(loginRequest));
+        return ApiResponse.success("登录成功", authService.login(loginRequest, httpRequest.getRemoteAddr()));
     }
 
     @PostMapping("/auth/refresh")

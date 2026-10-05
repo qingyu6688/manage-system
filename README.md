@@ -4,6 +4,8 @@
 [Art Design Pro](https://github.com/Daymychen/art-design-pro) 的 Vue 3 界面与动态路由能力，后端使用
 Spring Boot、MyBatis-Plus、Spring Security、JWT、Flyway 和 MySQL。
 
+当前版本：`1.1.1`。本版修复内容见 [更新日志](docs/更新日志.md)；从 1.0.x 升级需执行 V7、V8 迁移并重新登录。
+
 ## 已实现范围
 
 - JWT 登录、刷新令牌、当前用户信息
@@ -88,6 +90,7 @@ pnpm dev
 # 前端
 cd .\frontend
 pnpm lint
+pnpm test
 pnpm build
 
 # 后端

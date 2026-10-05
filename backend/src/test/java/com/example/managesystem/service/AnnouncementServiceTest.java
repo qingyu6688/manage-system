@@ -39,7 +39,8 @@ class AnnouncementServiceTest {
 
     @BeforeEach
     void setUp() {
-        LoginUser loginUser = new LoginUser(1L, "admin", "password", true, List.of());
+        LoginUser loginUser = new LoginUser(1L, "admin", "password", true,
+                List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("R_SUPER")));
         SecurityContextHolder.getContext().setAuthentication(
                 new UsernamePasswordAuthenticationToken(loginUser, null, List.of())
         );
@@ -86,6 +87,25 @@ class AnnouncementServiceTest {
         assertNull(announcement.getPublishedAt());
         assertNotNull(announcement.getUpdatedAt());
         verify(announcementMapper).updateById(announcement);
+    }
+
+    @Test
+    void shouldKeepFirstPublishInfoWhenEditingPublishedAnnouncement() {
+        java.time.LocalDateTime firstPublishedAt = java.time.LocalDateTime.of(2026, 9, 1, 9, 0);
+        SysAnnouncement announcement = new SysAnnouncement();
+        announcement.setId(1L);
+        announcement.setStatus("PUBLISHED");
+        announcement.setPublishedBy("operator");
+        announcement.setPublishedAt(firstPublishedAt);
+        when(announcementMapper.selectById(1L)).thenReturn(announcement);
+
+        announcementService.update(1L, new AnnouncementSaveRequest(
+                "系统维护通知（更正）", "维护时间调整为周日。", "SYSTEM", "PUBLISHED", false));
+        announcementService.updateStatus(1L, new AnnouncementStatusRequest("PUBLISHED"));
+
+        assertEquals("operator", announcement.getPublishedBy());
+        assertEquals(firstPublishedAt, announcement.getPublishedAt());
+        assertEquals("admin", announcement.getUpdatedBy());
     }
 
     @Test

@@ -10,6 +10,9 @@ import java.util.List;
 @Mapper
 public interface SysRoleMapper extends BaseMapper<SysRole> {
 
+    @org.apache.ibatis.annotations.Select("SELECT COUNT(*) FROM sys_role WHERE code=#{code} AND (#{id} IS NULL OR id != #{id})")
+    long countReservedCode(String code, Long id);
+
     @Select("""
             SELECT r.*
             FROM sys_role r

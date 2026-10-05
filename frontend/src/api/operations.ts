@@ -1,5 +1,12 @@
 import request from '@/utils/http'
 
+export function fetchMessageReceiverOptions(keyword?: string) {
+  return request.get<Pick<Api.SystemManage.UserListItem, 'id' | 'userName' | 'nickName'>[]>({
+    url: '/api/message/receivers',
+    params: { keyword }
+  })
+}
+
 export function fetchGetOperationLogList(params: Api.SystemManage.OperationLogSearchParams) {
   return request.get<Api.SystemManage.OperationLogList>({
     url: '/api/log/list',

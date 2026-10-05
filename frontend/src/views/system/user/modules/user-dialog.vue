@@ -102,6 +102,8 @@
     (e: 'success'): void
   }
 
+  const PASSWORD_PATTERN = /^(?=.*[A-Za-z])(?=.*\d).{8,64}$/
+
   const props = defineProps<Props>()
   const emit = defineEmits<Emits>()
   const { t } = useI18n()
@@ -121,7 +123,6 @@
     gender: 1,
     userPhone: '',
     userEmail: '',
-    avatar: '',
     password: '',
     status: 1,
     roleIds: []
@@ -149,7 +150,8 @@
             callback(new Error(t('systemManage.user.validation.initialPassword')))
             return
           }
-          if (value && value.length < 8) {
+          // 与后端规则保持一致：8到64位，同时包含字母和数字
+          if (value && !PASSWORD_PATTERN.test(value)) {
             callback(new Error(t('systemManage.user.validation.passwordLength')))
             return
           }
@@ -187,7 +189,6 @@
       gender: row?.userGender === '女' ? 2 : 1,
       userPhone: row?.userPhone || '',
       userEmail: row?.userEmail || '',
-      avatar: row?.avatar || '',
       status: Number(row?.status || 1),
       roleIds: row?.roleIds || []
     })

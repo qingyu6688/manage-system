@@ -10,8 +10,11 @@ import com.example.managesystem.entity.SysFile;
 import com.example.managesystem.mapper.SysFileMapper;
 import com.example.managesystem.security.SecurityUtils;
 import com.example.managesystem.service.FileService;
+import com.example.managesystem.service.FileTransactions;
+import com.example.managesystem.service.FileContentValidator;
 import com.example.managesystem.vo.FileListItem;
 import com.example.managesystem.vo.PageResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
@@ -29,6 +32,7 @@ import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
 
+@Slf4j
 @Service
 public class FileServiceImpl implements FileService {
 
@@ -89,11 +93,15 @@ public class FileServiceImpl implements FileService {
         Path target = resolveStoragePath(storageName);
         try {
             Files.createDirectories(storageRoot);
-            Files.copy(multipartFile.getInputStream(), target, StandardCopyOption.REPLACE_EXISTING);
+            try (var input = multipartFile.getInputStream()) {
+                Files.copy(input, target, StandardCopyOption.REPLACE_EXISTING);
+            }
         } catch (IOException exception) {
+            deleteQuietly(target);
             throw new SystemException(ErrorCode.FILE_STORAGE_ERROR, "文件保存失败，请稍后重试", exception);
         }
 
+        FileTransactions.onRollback(() -> deletePhysicalFile(target));
         try {
             LocalDateTime now = LocalDateTime.now();
             SysFile file = new SysFile();
@@ -107,7 +115,7 @@ public class FileServiceImpl implements FileService {
             fileMapper.insert(file);
             return toListItem(file);
         } catch (RuntimeException exception) {
-            deletePhysicalFile(target);
+            deleteQuietly(target);
             throw exception;
         }
     }
@@ -126,7 +134,7 @@ public class FileServiceImpl implements FileService {
         SysFile file = requireFile(id);
         Path path = resolveStoragePath(file.getStorageName());
         fileMapper.deleteById(id);
-        deletePhysicalFile(path);
+        FileTransactions.afterCommit(() -> deletePhysicalFile(path));
     }
 
     private void validateFile(MultipartFile file) {
@@ -146,6 +154,7 @@ public class FileServiceImpl implements FileService {
                 || !ALLOWED_EXTENSIONS.contains(extension.toLowerCase(Locale.ROOT))) {
             throw new BusinessException("不支持该文件扩展名");
         }
+        FileContentValidator.validate(file, extension.toLowerCase(Locale.ROOT), contentType.toLowerCase(Locale.ROOT));
     }
 
     private String normalizeOriginalName(String originalName) {
@@ -182,7 +191,16 @@ public class FileServiceImpl implements FileService {
         try {
             Files.deleteIfExists(path);
         } catch (IOException exception) {
-            throw new SystemException(ErrorCode.FILE_STORAGE_ERROR, "文件删除失败，请稍后重试", exception);
+            throw new SystemException(ErrorCode.FILE_STORAGE_ERROR, "文件清理失败，存储文件：" + path.getFileName(), exception);
+        }
+    }
+
+    /** 失败路径上的清理不能覆盖原始异常，否则用户看到的是“清理失败”而不是真正的出错原因。 */
+    private void deleteQuietly(Path path) {
+        try {
+            Files.deleteIfExists(path);
+        } catch (IOException exception) {
+            log.error("FILE_CLEANUP_FAILED 上传失败后的临时文件清理失败 storageName={}", path.getFileName(), exception);
         }
     }
 

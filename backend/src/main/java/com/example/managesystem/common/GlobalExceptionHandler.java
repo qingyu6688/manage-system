@@ -1,5 +1,6 @@
 package com.example.managesystem.common;
 
+import com.example.managesystem.config.OperationLogInterceptor;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
@@ -8,6 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.BindException;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
@@ -16,14 +18,13 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.MultipartException;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
-
-    private static final String BUSINESS_SUCCESS_ATTRIBUTE =
-            "com.example.managesystem.operation-log.business-success";
 
     @ExceptionHandler(BusinessException.class)
     public ApiResponse<Void> handleBusinessException(
@@ -74,8 +75,11 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler({
             MissingServletRequestParameterException.class,
+            MissingServletRequestPartException.class,
             MethodArgumentTypeMismatchException.class,
-            HttpMessageNotReadableException.class
+            HttpMessageNotReadableException.class,
+            HttpMediaTypeNotSupportedException.class,
+            MultipartException.class
     })
     public ApiResponse<Void> handleMalformedRequest(
             Exception exception,
@@ -231,6 +235,6 @@ public class GlobalExceptionHandler {
     }
 
     private void markBusinessFailure(HttpServletRequest request) {
-        request.setAttribute(BUSINESS_SUCCESS_ATTRIBUTE, Boolean.FALSE);
+        request.setAttribute(OperationLogInterceptor.BUSINESS_SUCCESS_ATTRIBUTE, Boolean.FALSE);
     }
 }

@@ -8,6 +8,7 @@ import com.example.managesystem.entity.SysMenu;
 import com.example.managesystem.mapper.SysMenuMapper;
 import com.example.managesystem.mapper.SysRoleMenuMapper;
 import com.example.managesystem.security.LoginUser;
+import com.example.managesystem.security.PermissionPolicy;
 import com.example.managesystem.service.MenuService;
 import com.example.managesystem.vo.MenuRoute;
 import lombok.RequiredArgsConstructor;
@@ -35,6 +36,12 @@ public class MenuServiceImpl implements MenuService {
     private final SysRoleMenuMapper roleMenuMapper;
 
     public List<MenuRoute> currentUserMenus(LoginUser loginUser) {
+        // 超级管理员在接口层不受菜单授权限制，菜单也直接取全部启用节点；
+        // 否则误取消 R_SUPER 的“角色管理”授权后，界面上将无法再改回来。
+        if (PermissionPolicy.isSuper(loginUser)) {
+            return buildTree(menuMapper.selectList(new LambdaQueryWrapper<SysMenu>()
+                    .eq(SysMenu::getEnabled, true)));
+        }
         return buildTree(menuMapper.selectEnabledByUserId(loginUser.userId()));
     }
 
@@ -63,6 +70,11 @@ public class MenuServiceImpl implements MenuService {
             throw new BusinessException("菜单不能设置自己为上级节点");
         }
         ensureParentNotDescendant(id, defaultParentId(request.parentId()));
+        // 后端接口权限串由路由名称拼成（如 User:add），改名会让已授权角色在接口层全部失去权限。
+        if (!BUTTON_TYPE.equals(menu.getMenuType()) && !BUTTON_TYPE.equals(request.menuType())
+                && menu.getRouteName() != null && !menu.getRouteName().equals(trimToNull(request.routeName()))) {
+            throw new BusinessException("路由名称创建后不能修改，如需调整请新建菜单");
+        }
         if (!BUTTON_TYPE.equals(menu.getMenuType()) && BUTTON_TYPE.equalsIgnoreCase(request.menuType())) {
             Long childCount = menuMapper.selectCount(new LambdaQueryWrapper<SysMenu>()
                     .eq(SysMenu::getParentId, id));
@@ -148,50 +160,66 @@ public class MenuServiceImpl implements MenuService {
 
     private void validateRequest(Long id, MenuSaveRequest request) {
         Long parentId = defaultParentId(request.parentId());
-        if (parentId > 0) {
-            SysMenu parent = requireMenu(parentId);
-            if (BUTTON_TYPE.equals(parent.getMenuType())) {
-                throw new BusinessException("按钮节点不能作为上级节点");
-            }
+        SysMenu parent = parentId > 0 ? requireMenu(parentId) : null;
+        if (parent != null && BUTTON_TYPE.equals(parent.getMenuType())) {
+            throw new BusinessException("按钮节点不能作为上级节点");
         }
-        if (BUTTON_TYPE.equalsIgnoreCase(request.menuType())) {
-            if (!StringUtils.hasText(request.permission())) {
+        if (BUTTON_TYPE.equals(request.menuType())) {
+            // 按钮权限串依赖上级菜单的路由名称，挂在根节点下不会产生任何有效权限。
+            if (parent == null) {
+                throw new BusinessException("按钮必须挂在某个菜单下");
+            }
+            String permission = trimToNull(request.permission());
+            if (permission == null) {
                 throw new BusinessException("按钮权限标识不能为空");
             }
-        } else {
-            if (!StringUtils.hasText(request.routeName()) || !StringUtils.hasText(request.path())) {
-                throw new BusinessException("菜单的路由名称和路由地址不能为空");
-            }
-            Long duplicated = menuMapper.selectCount(new LambdaQueryWrapper<SysMenu>()
-                    .eq(SysMenu::getRouteName, request.routeName())
+            long duplicated = menuMapper.selectCount(new LambdaQueryWrapper<SysMenu>()
+                    .eq(SysMenu::getParentId, parentId)
+                    .eq(SysMenu::getMenuType, BUTTON_TYPE)
+                    .eq(SysMenu::getPermission, permission)
                     .ne(id != null, SysMenu::getId, id));
             if (duplicated > 0) {
-                throw new BusinessException("路由名称已存在");
+                throw new BusinessException("同一菜单下的按钮权限标识不能重复");
+            }
+        } else {
+            String routeName = trimToNull(request.routeName());
+            if (routeName == null || trimToNull(request.path()) == null) {
+                throw new BusinessException("菜单的路由名称和路由地址不能为空");
+            }
+            long duplicated = menuMapper.countReservedName(routeName, id);
+            if (duplicated > 0) {
+                throw new BusinessException("路由名称已使用，包含已删除菜单，请使用其他名称");
             }
         }
     }
 
     private void applyRequest(SysMenu menu, MenuSaveRequest request) {
+        boolean button = BUTTON_TYPE.equals(request.menuType());
         menu.setParentId(defaultParentId(request.parentId()));
-        menu.setMenuType(request.menuType().toUpperCase());
-        menu.setTitle(request.title());
-        menu.setRouteName(request.routeName());
-        menu.setPath(request.path());
-        menu.setComponent(request.component());
-        menu.setPermission(request.permission());
-        menu.setIcon(request.icon());
+        menu.setMenuType(request.menuType());
+        menu.setTitle(request.title().trim());
+        // 按钮只保留权限标识，菜单只保留路由信息，另一类字段一律写 NULL，避免空串撞唯一索引。
+        menu.setRouteName(button ? null : trimToNull(request.routeName()));
+        menu.setPath(button ? null : trimToNull(request.path()));
+        menu.setComponent(button ? null : trimToNull(request.component()));
+        menu.setPermission(button ? trimToNull(request.permission()) : null);
+        menu.setIcon(button ? null : trimToNull(request.icon()));
         menu.setSort(request.sort() == null ? 0 : request.sort());
         menu.setEnabled(request.enabled());
         menu.setHidden(Boolean.TRUE.equals(request.hidden()));
         menu.setKeepAlive(Boolean.TRUE.equals(request.keepAlive()));
         menu.setHiddenTab(Boolean.TRUE.equals(request.hiddenTab()));
         menu.setIframe(Boolean.TRUE.equals(request.iframe()));
-        menu.setExternalLink(request.externalLink());
+        menu.setExternalLink(button ? null : trimToNull(request.externalLink()));
         menu.setBadge(Boolean.TRUE.equals(request.badge()));
-        menu.setTextBadge(request.textBadge());
+        menu.setTextBadge(button ? null : trimToNull(request.textBadge()));
         menu.setFixedTab(Boolean.TRUE.equals(request.fixedTab()));
-        menu.setActivePath(request.activePath());
+        menu.setActivePath(button ? null : trimToNull(request.activePath()));
         menu.setFullPage(Boolean.TRUE.equals(request.fullPage()));
+    }
+
+    private String trimToNull(String value) {
+        return StringUtils.hasText(value) ? value.trim() : null;
     }
 
     private SysMenu requireMenu(Long id) {

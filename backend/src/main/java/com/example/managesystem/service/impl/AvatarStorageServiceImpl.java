@@ -4,6 +4,7 @@ import com.example.managesystem.common.BusinessException;
 import com.example.managesystem.common.ErrorCode;
 import com.example.managesystem.common.SystemException;
 import com.example.managesystem.service.AvatarStorageService;
+import com.example.managesystem.service.FileTransactions;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.FileSystemResource;
@@ -53,10 +54,14 @@ public class AvatarStorageServiceImpl implements AvatarStorageService {
         Path target = resolve(storageName);
         try {
             Files.createDirectories(storageRoot);
-            Files.copy(file.getInputStream(), target, StandardCopyOption.REPLACE_EXISTING);
+            try (InputStream input = file.getInputStream()) {
+                Files.copy(input, target, StandardCopyOption.REPLACE_EXISTING);
+            }
         } catch (IOException exception) {
+            deleteQuietly(storageName);
             throw new SystemException(ErrorCode.FILE_STORAGE_ERROR, "头像保存失败，请稍后重试", exception);
         }
+        FileTransactions.onRollback(() -> deleteQuietly(storageName));
         return new StoredAvatar(storageName, AVATAR_URL_PREFIX + storageName);
     }
 

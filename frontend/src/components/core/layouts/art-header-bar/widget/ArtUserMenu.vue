@@ -63,6 +63,7 @@
 </template>
 
 <script setup lang="ts">
+  import { logoutWithRevoke } from '@/utils/sys/logout'
   import { useI18n } from 'vue-i18n'
   import { useRouter } from 'vue-router'
   import { ElMessageBox } from 'element-plus'
@@ -130,9 +131,12 @@
         confirmButtonText: t('common.confirm'),
         cancelButtonText: t('common.cancel'),
         customClass: 'login-out-dialog'
-      }).then(() => {
-        userStore.logOut()
       })
+        .then(logoutWithRevoke)
+        .catch((error: unknown) => {
+          // 取消确认直接返回
+          if (error !== 'cancel' && error !== 'close') closeUserMenu()
+        })
     }, 200)
   }
 

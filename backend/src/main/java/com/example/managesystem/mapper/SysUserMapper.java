@@ -10,6 +10,12 @@ import java.util.List;
 @Mapper
 public interface SysUserMapper extends BaseMapper<SysUser> {
 
+    @Select("SELECT COUNT(*) FROM sys_user WHERE username=#{name} AND (#{id} IS NULL OR id != #{id})")
+    long countReservedName(String name, Long id);
+
+    @org.apache.ibatis.annotations.Update("UPDATE sys_user SET token_version=token_version+1 WHERE id=#{id}")
+    int revokeTokens(Long id);
+
     @Select("""
             SELECT r.code
             FROM sys_role r

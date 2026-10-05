@@ -18,7 +18,7 @@
             @keyup.enter="handleSubmit"
             style="margin-top: 25px"
           >
-            <ElFormItem prop="account">
+            <ElFormItem v-if="showDemoAccounts" prop="account">
               <ElSelect v-model="formData.account" @change="setupAccount">
                 <ElOption
                   v-for="account in accounts"
@@ -137,6 +137,9 @@
     roles: string[]
   }
 
+  // 演示账号使用公开的默认密码，只在本地开发时提供快捷填充，生产构建不能把它带到登录页
+  const showDemoAccounts = import.meta.env.DEV
+
   const accounts = computed<Account[]>(() => [
     {
       key: 'super',
@@ -180,7 +183,7 @@
   const loading = ref(false)
 
   onMounted(() => {
-    setupAccount('super')
+    if (showDemoAccounts) setupAccount('super')
   })
 
   // 设置账号

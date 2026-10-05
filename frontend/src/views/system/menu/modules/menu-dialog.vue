@@ -207,7 +207,11 @@
         label: t('systemManage.menu.dialog.fields.routeName'),
         key: 'routeName',
         type: 'input',
-        props: { placeholder: t('systemManage.menu.dialog.placeholders.routeName') }
+        // 后端权限标识由路由名称拼成，创建后不允许修改
+        props: {
+          placeholder: t('systemManage.menu.dialog.placeholders.routeName'),
+          disabled: isEdit.value && Boolean(props.editData?.name)
+        }
       },
       {
         label: t('systemManage.menu.dialog.fields.path'),
@@ -321,7 +325,7 @@
         menuType: 'BUTTON',
         title: row.meta?.title || '',
         permission: row.meta?.authMark || '',
-        sort: Number(row.meta?.sort || 10),
+        sort: Number(row.meta?.sort ?? 10),
         enabled: row.meta?.isEnable ?? true
       })
       return
@@ -336,7 +340,7 @@
       path: row.path || '',
       component: typeof row.component === 'string' ? row.component : '',
       icon: row.meta?.icon || '',
-      sort: Number(row.meta?.sort || 10),
+      sort: Number(row.meta?.sort ?? 10),
       enabled: row.meta?.isEnable ?? true,
       hidden: row.meta?.isHide ?? false,
       keepAlive: row.meta?.keepAlive ?? false,

@@ -44,6 +44,7 @@
 </template>
 
 <script setup lang="ts">
+  import { useAuth } from '@/hooks/core/useAuth'
   import ArtButtonTable from '@/components/core/forms/art-button-table/index.vue'
   import { useTable } from '@/hooks/core/useTable'
   import { fetchDeleteUser, fetchGetUserList } from '@/api/system-manage'
@@ -53,12 +54,14 @@
   import { DialogType } from '@/types'
   import defaultAvatar from '@/assets/images/user/avatar.webp'
   import { useI18n } from 'vue-i18n'
+  import { isHandledRejection } from '@/utils/http/error'
 
   defineOptions({ name: 'User' })
 
   type UserListItem = Api.SystemManage.UserListItem
 
   const { t } = useI18n()
+  const { hasAuth } = useAuth()
 
   // 弹窗相关
   const dialogType = ref<DialogType>('add')
@@ -163,14 +166,16 @@
           fixed: 'right', // 固定列
           formatter: (row) =>
             h('div', [
-              h(ArtButtonTable, {
-                type: 'edit',
-                onClick: () => showDialog('edit', row)
-              }),
-              h(ArtButtonTable, {
-                type: 'delete',
-                onClick: () => deleteUser(row)
-              })
+              hasAuth('edit') &&
+                h(ArtButtonTable, {
+                  type: 'edit',
+                  onClick: () => showDialog('edit', row)
+                }),
+              hasAuth('delete') &&
+                h(ArtButtonTable, {
+                  type: 'delete',
+                  onClick: () => deleteUser(row)
+                })
             ])
         }
       ]
@@ -209,10 +214,14 @@
         cancelButtonText: t('common.cancel'),
         type: 'error'
       }
-    ).then(async () => {
-      await fetchDeleteUser(row.id)
-      await refreshData()
-    })
+    )
+      .then(async () => {
+        await fetchDeleteUser(row.id)
+        await refreshData()
+      })
+      .catch((error: unknown) => {
+        if (!isHandledRejection(error)) throw error
+      })
   }
 
   /**

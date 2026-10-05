@@ -38,7 +38,7 @@
       <ElFormItem :label="$t('systemManage.announcement.fields.status')" prop="status">
         <ElRadioGroup v-model="formData.status">
           <ElRadio value="DRAFT">{{ $t('systemManage.announcement.statuses.draft') }}</ElRadio>
-          <ElRadio value="PUBLISHED">{{
+          <ElRadio value="PUBLISHED" :disabled="!hasAuth('publish')">{{
             $t('systemManage.announcement.statuses.published')
           }}</ElRadio>
         </ElRadioGroup>
@@ -74,6 +74,7 @@
 </template>
 
 <script setup lang="ts">
+  import { useAuth } from '@/hooks/core/useAuth'
   import type { FormInstance, FormRules } from 'element-plus'
   import { fetchCreateAnnouncement, fetchUpdateAnnouncement } from '@/api/system-manage'
   import type { DialogType } from '@/types'
@@ -89,6 +90,8 @@
     (e: 'update:visible', value: boolean): void
     (e: 'success'): void
   }
+
+  const { hasAuth } = useAuth()
 
   const props = defineProps<Props>()
   const emit = defineEmits<Emits>()

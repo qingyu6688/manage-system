@@ -1,5 +1,10 @@
 import request from '@/utils/http'
 
+/** 撤销当前会话；失败时由调用方决定是否继续本地退出，不在这里弹错误 */
+export function fetchLogout(): Promise<void> {
+  return request.post<void>({ url: '/api/auth/logout', showErrorMessage: false })
+}
+
 /**
  * 登录
  * @param params 登录参数

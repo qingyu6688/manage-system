@@ -603,7 +603,7 @@
       "validation": {
         "usernameLength": "Use 2 to 30 characters",
         "initialPassword": "Enter an initial password",
-        "passwordLength": "The password must contain at least 8 characters",
+        "passwordLength": "The password must be 8 to 64 characters and contain both letters and digits",
         "phone": "Enter a valid phone number",
         "email": "Enter a valid email address"
       }

@@ -31,6 +31,16 @@ public class MessageServiceImpl implements MessageService {
     private final SysMessageReceiverMapper messageReceiverMapper;
     private final SysUserMapper userMapper;
 
+    public List<com.example.managesystem.vo.MessageReceiverOption> receiverOptions(String keyword) {
+        var query = new LambdaQueryWrapper<SysUser>().eq(SysUser::getStatus, 1);
+        if (org.springframework.util.StringUtils.hasText(keyword)) {
+            query.and(condition -> condition.like(SysUser::getUsername, keyword).or().like(SysUser::getNickname, keyword));
+        }
+        return userMapper.selectPage(new Page<>(1, 100), query.orderByAsc(SysUser::getId))
+                .getRecords().stream().map(user -> new com.example.managesystem.vo.MessageReceiverOption(
+                        user.getId(), user.getUsername(), user.getNickname())).toList();
+    }
+
     public PageResponse<MessageListItem> page(
             Long userId,
             long current,
