@@ -66,6 +66,7 @@
   } from '@/api/system-manage'
   import { ElTag, ElMessageBox } from 'element-plus'
   import { useI18n } from 'vue-i18n'
+  import { isHandledRejection } from '@/utils/http/error'
 
   defineOptions({ name: 'Menus' })
 
@@ -463,7 +464,8 @@
       await fetchDeleteMenu(row.id)
       await getMenuList()
     } catch (error) {
-      if (error !== 'cancel') {
+      // 接口错误已由请求层提示，这里只处理意料之外的异常，避免重复弹两条错误
+      if (!isHandledRejection(error)) {
         ElMessage.error(t('systemManage.menu.deleteFailed'))
       }
     }
@@ -483,7 +485,8 @@
       await fetchDeleteMenu(row.id)
       await getMenuList()
     } catch (error) {
-      if (error !== 'cancel') {
+      // 接口错误已由请求层提示，这里只处理意料之外的异常，避免重复弹两条错误
+      if (!isHandledRejection(error)) {
         ElMessage.error(t('systemManage.menu.deleteFailed'))
       }
     }

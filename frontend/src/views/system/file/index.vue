@@ -46,6 +46,7 @@
     fetchUploadFile
   } from '@/api/operations'
   import FileSearch from './modules/file-search.vue'
+  import { isHandledRejection } from '@/utils/http/error'
 
   defineOptions({ name: 'FileManage' })
 
@@ -133,12 +134,13 @@
     return false
   }
 
+  // 返回的 Promise 由 ElUpload 自己调用 onSuccess/onError，这里再手动调用会触发两次成功回调
   const uploadFile = async (options: UploadRequestOptions) => {
     uploading.value = true
     try {
       const result = await fetchUploadFile(options.file)
-      options.onSuccess(result)
       await refreshCreate()
+      return result
     } finally {
       uploading.value = false
     }
@@ -158,9 +160,13 @@
         confirmButtonText: t('common.confirm'),
         cancelButtonText: t('common.cancel')
       }
-    ).then(async () => {
-      await fetchDeleteFile(row.id)
-      await refreshRemove()
-    })
+    )
+      .then(async () => {
+        await fetchDeleteFile(row.id)
+        await refreshRemove()
+      })
+      .catch((error: unknown) => {
+        if (!isHandledRejection(error)) throw error
+      })
   }
 </script>

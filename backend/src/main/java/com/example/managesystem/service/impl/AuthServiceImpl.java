@@ -6,6 +6,7 @@ import com.example.managesystem.dto.LoginRequest;
 import com.example.managesystem.mapper.SysUserMapper;
 import com.example.managesystem.security.CustomUserDetailsService;
 import com.example.managesystem.security.JwtTokenProvider;
+import com.example.managesystem.security.LoginAttemptGuard;
 import com.example.managesystem.security.LoginUser;
 import com.example.managesystem.security.AuthSessionService;
 import com.example.managesystem.service.AuthService;
@@ -30,17 +31,22 @@ public class AuthServiceImpl implements AuthService {
     private final CustomUserDetailsService userDetailsService;
     private final SysUserMapper userMapper;
     private final AuthSessionService sessionService;
+    private final LoginAttemptGuard loginAttemptGuard;
 
-    public LoginResponse login(LoginRequest request) {
+    public LoginResponse login(LoginRequest request, String clientAddress) {
+        loginAttemptGuard.checkAllowed(request.userName(), clientAddress);
+        LoginUser loginUser;
         try {
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(request.userName(), request.password())
             );
-            LoginUser loginUser = (LoginUser) authentication.getPrincipal();
-            return sessionService.create(loginUser);
+            loginUser = (LoginUser) authentication.getPrincipal();
         } catch (AuthenticationException exception) {
+            loginAttemptGuard.recordFailure(request.userName(), clientAddress);
             throw new BusinessException(400, "用户名或密码错误");
         }
+        loginAttemptGuard.recordSuccess(request.userName(), clientAddress);
+        return sessionService.create(loginUser);
     }
 
     public LoginResponse refresh(String refreshToken) {

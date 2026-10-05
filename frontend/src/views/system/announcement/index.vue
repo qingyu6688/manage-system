@@ -43,6 +43,7 @@
   } from '@/api/system-manage'
   import AnnouncementSearch from './modules/announcement-search.vue'
   import AnnouncementDialog from './modules/announcement-dialog.vue'
+  import { isHandledRejection } from '@/utils/http/error'
 
   defineOptions({ name: 'Announcement' })
 
@@ -224,10 +225,14 @@
         cancelButtonText: t('common.cancel'),
         type: publishing ? 'success' : 'warning'
       }
-    ).then(async () => {
-      await fetchUpdateAnnouncementStatus(row.id, nextStatus)
-      await refreshUpdate()
-    })
+    )
+      .then(async () => {
+        await fetchUpdateAnnouncementStatus(row.id, nextStatus)
+        await refreshUpdate()
+      })
+      .catch((error: unknown) => {
+        if (!isHandledRejection(error)) throw error
+      })
   }
 
   const deleteAnnouncement = (row: AnnouncementListItem): void => {
@@ -239,10 +244,14 @@
         cancelButtonText: t('common.cancel'),
         type: 'error'
       }
-    ).then(async () => {
-      await fetchDeleteAnnouncement(row.id)
-      await refreshRemove()
-    })
+    )
+      .then(async () => {
+        await fetchDeleteAnnouncement(row.id)
+        await refreshRemove()
+      })
+      .catch((error: unknown) => {
+        if (!isHandledRejection(error)) throw error
+      })
   }
 </script>
 

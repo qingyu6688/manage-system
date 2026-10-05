@@ -54,6 +54,7 @@
   import { DialogType } from '@/types'
   import defaultAvatar from '@/assets/images/user/avatar.webp'
   import { useI18n } from 'vue-i18n'
+  import { isHandledRejection } from '@/utils/http/error'
 
   defineOptions({ name: 'User' })
 
@@ -213,10 +214,14 @@
         cancelButtonText: t('common.cancel'),
         type: 'error'
       }
-    ).then(async () => {
-      await fetchDeleteUser(row.id)
-      await refreshData()
-    })
+    )
+      .then(async () => {
+        await fetchDeleteUser(row.id)
+        await refreshData()
+      })
+      .catch((error: unknown) => {
+        if (!isHandledRejection(error)) throw error
+      })
   }
 
   /**

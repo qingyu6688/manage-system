@@ -19,6 +19,7 @@ public record MessageSendRequest(
         String type,
         @NotNull(message = "发送范围不能为空")
         Boolean allUsers,
-        List<Long> receiverIds
+        @Size(max = 500, message = "单次最多指定500个接收人，更多请选择全部用户")
+        List<@NotNull(message = "接收人不能为空") Long> receiverIds
 ) {
 }

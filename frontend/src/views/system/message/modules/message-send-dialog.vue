@@ -39,6 +39,8 @@
           v-model="form.receiverIds"
           multiple
           filterable
+          remote
+          :remote-method="searchUsers"
           collapse-tags
           collapse-tags-tooltip
           class="w-full"
@@ -93,7 +95,8 @@
   const formRef = ref<FormInstance>()
   const submitting = ref(false)
   const userLoading = ref(false)
-  const userOptions = ref<Pick<Api.SystemManage.UserListItem, 'id' | 'userName' | 'nickName'>[]>([])
+  type ReceiverOption = Pick<Api.SystemManage.UserListItem, 'id' | 'userName' | 'nickName'>
+  const userOptions = ref<ReceiverOption[]>([])
   const createInitialForm = (): Api.SystemManage.MessageSendParams => ({
     title: '',
     content: '',
@@ -127,11 +130,18 @@
     ]
   }))
 
-  const loadUsers = async () => {
-    if (userOptions.value.length > 0) return
+  /**
+   * 接收人接口每次最多返回100个用户，改为按关键字远程搜索，否则第100名之后的用户无法选择。
+   * 已选中的用户不在本次结果里时要保留，否则已选标签会退化成数字ID。
+   */
+  const searchUsers = async (keyword = '') => {
     userLoading.value = true
     try {
-      userOptions.value = await fetchMessageReceiverOptions()
+      const results = await fetchMessageReceiverOptions(keyword.trim() || undefined)
+      const selected = userOptions.value.filter((user) => form.receiverIds.includes(user.id))
+      const merged = new Map<number, ReceiverOption>()
+      for (const user of [...selected, ...results]) merged.set(user.id, user)
+      userOptions.value = [...merged.values()]
     } finally {
       userLoading.value = false
     }
@@ -140,7 +150,7 @@
   const handleOpen = () => {
     Object.assign(form, createInitialForm())
     nextTick(() => formRef.value?.clearValidate())
-    loadUsers()
+    searchUsers()
   }
 
   const submit = async () => {

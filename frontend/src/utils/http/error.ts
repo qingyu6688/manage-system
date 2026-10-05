@@ -186,6 +186,14 @@ export function handleError(error: AxiosError<ErrorResponse>): never {
  * @param error 错误对象
  * @param showMessage 是否显示错误消息
  */
+/**
+ * 确认框的取消/关闭，以及请求层已经弹过提示的接口错误，页面无需再处理。
+ * 其余异常返回 false，由调用方继续抛出交给全局错误处理。
+ */
+export function isHandledRejection(error: unknown): boolean {
+  return error === 'cancel' || error === 'close' || error instanceof HttpError
+}
+
 export function showError(error: HttpError, showMessage: boolean = true): void {
   if (showMessage) {
     const message = error.errorId

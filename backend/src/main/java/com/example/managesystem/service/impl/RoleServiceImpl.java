@@ -123,6 +123,9 @@ public class RoleServiceImpl implements RoleService {
     @Transactional
     public void updateMenus(Long roleId, List<Long> menuIds) {
         SysRole role = requireRole(roleId);
+        if (SUPER_ROLE_CODE.equals(role.getCode())) {
+            throw new BusinessException("超级管理员默认拥有全部菜单，无需单独授权");
+        }
         List<Long> distinctIds = menuIds.stream().distinct().toList();
         if (!distinctIds.isEmpty()) {
             long menuCount = menuMapper.selectCount(new LambdaQueryWrapper<SysMenu>()

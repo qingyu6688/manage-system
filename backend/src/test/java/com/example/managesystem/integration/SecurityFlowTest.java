@@ -121,9 +121,9 @@ class SecurityFlowTest {
         var flyway = org.flywaydb.core.Flyway.configure().dataSource(dataSource)
                 .cleanDisabled(false).load();
         flyway.clean();
-        assertEquals(7, flyway.migrate().migrationsExecuted);
+        assertEquals(8, flyway.migrate().migrationsExecuted);
         flyway.validate();
-        assertEquals(7, jdbc.queryForObject("SELECT COUNT(*) FROM flyway_schema_history WHERE success=1", Integer.class));
+        assertEquals(8, jdbc.queryForObject("SELECT COUNT(*) FROM flyway_schema_history WHERE success=1", Integer.class));
     }
 
     @Test
@@ -305,6 +305,129 @@ class SecurityFlowTest {
         assertEquals(1L, userMapper.selectById(2L).getTokenVersion());
     }
 
+    @Test
+    void buttonsCreatedFromDialogDoNotCollideOnRouteName() throws Exception {
+        String bearer = "Bearer " + login("admin").path("token").asText();
+        // 前端弹窗会把未填写的菜单字段以空串提交
+        for (String permission : new String[]{"export", "import"}) {
+            mvc.perform(post("/api/menu").header("Authorization", bearer).contentType("application/json")
+                            .content(menuBody("BUTTON", 11, "按钮" + permission, "", permission)))
+                    .andExpect(status().isOk()).andExpect(jsonPath("$.code").value(200));
+        }
+        assertEquals(0, jdbc.queryForObject(
+                "SELECT COUNT(*) FROM sys_menu WHERE route_name = '' OR path = ''", Integer.class));
+        mvc.perform(post("/api/menu").header("Authorization", bearer).contentType("application/json")
+                        .content(menuBody("BUTTON", 11, "重复按钮", "", "export")))
+                .andExpect(jsonPath("$.code").value(400));
+    }
+
+    @Test
+    void buttonMustBelongToMenuAndRouteNameIsImmutable() throws Exception {
+        String bearer = "Bearer " + login("admin").path("token").asText();
+        mvc.perform(post("/api/menu").header("Authorization", bearer).contentType("application/json")
+                        .content(menuBody("BUTTON", 0, "根按钮", "", "orphan")))
+                .andExpect(jsonPath("$.code").value(400));
+        mvc.perform(put("/api/menu/11").header("Authorization", bearer).contentType("application/json")
+                        .content(menuBody("MENU", 10, "用户管理", "Users", "")))
+                .andExpect(jsonPath("$.code").value(400));
+        mvc.perform(put("/api/menu/11").header("Authorization", bearer).contentType("application/json")
+                        .content(menuBody("MENU", 10, "成员管理", "User", "")))
+                .andExpect(jsonPath("$.code").value(200));
+        mvc.perform(post("/api/menu").header("Authorization", bearer).contentType("application/json")
+                        .content(menuBody("MENU", 10, "非法外链", "BadLink", "")
+                                .replace("\"externalLink\":\"\"", "\"externalLink\":\"javascript:alert(1)\"")))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void superAdminMenusDoNotDependOnRoleGrant() throws Exception {
+        jdbc.update("DELETE FROM sys_role_menu WHERE role_id=1 AND menu_id=20");
+        String bearer = "Bearer " + login("admin").path("token").asText();
+        String menus = mvc.perform(get("/api/v3/system/menus").header("Authorization", bearer))
+                .andExpect(jsonPath("$.code").value(200)).andReturn().getResponse().getContentAsString();
+        assertTrue(menus.contains("\"name\":\"Role\""));
+        mvc.perform(put("/api/role/1/menus").header("Authorization", bearer).contentType("application/json")
+                        .content("{\"menuIds\":[1,2]}"))
+                .andExpect(jsonPath("$.code").value(400));
+        assertTrue(jdbc.queryForObject("SELECT COUNT(*) FROM sys_role_menu WHERE role_id=1", Integer.class) > 2);
+    }
+
+    @Test
+    void editingContactInfoKeepsSessionButDisablingRevokesIt() throws Exception {
+        JsonNode operator = login("operator");
+        String admin = "Bearer " + login("admin").path("token").asText();
+        mvc.perform(put("/api/user/2").header("Authorization", admin).contentType("application/json")
+                        .content(userBody("operator", 2).replace("InitialPass123", "")
+                                .replace("测试用户", "新昵称")))
+                .andExpect(jsonPath("$.code").value(200));
+        mvc.perform(get("/api/message/unread-count")
+                        .header("Authorization", "Bearer " + operator.path("token").asText()))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.code").value(200));
+
+        mvc.perform(put("/api/user/2").header("Authorization", admin).contentType("application/json")
+                        .content(userBody("operator", 2).replace("InitialPass123", "")
+                                .replace("\"status\":1", "\"status\":2")))
+                .andExpect(jsonPath("$.code").value(200));
+        assertAccessDenied(operator);
+    }
+
+    @Test
+    void userManagementCannotOverwriteAvatarOrDisableSelf() throws Exception {
+        jdbc.update("UPDATE sys_user SET avatar='/api/profile/avatar/new.png' WHERE id=2");
+        String admin = "Bearer " + login("admin").path("token").asText();
+        mvc.perform(put("/api/user/2").header("Authorization", admin).contentType("application/json")
+                        .content(userBody("operator", 2).replace("InitialPass123", "")
+                                .replace("{", "{\"avatar\":\"https://example.com/old.png\",")))
+                .andExpect(jsonPath("$.code").value(200));
+        assertEquals("/api/profile/avatar/new.png",
+                jdbc.queryForObject("SELECT avatar FROM sys_user WHERE id=2", String.class));
+
+        String operator = "Bearer " + login("operator").path("token").asText();
+        mvc.perform(put("/api/user/2").header("Authorization", operator).contentType("application/json")
+                        .content(userBody("operator", 2).replace("InitialPass123", "")
+                                .replace("\"status\":1", "\"status\":2")))
+                .andExpect(jsonPath("$.code").value(400));
+        assertEquals(1, jdbc.queryForObject("SELECT status FROM sys_user WHERE id=2", Integer.class));
+    }
+
+    @Test
+    void builtInAdminRoleCheckIgnoresDuplicatesAndListShowsRoles() throws Exception {
+        String admin = "Bearer " + login("admin").path("token").asText();
+        String body = json.writeValueAsString(Map.of("userName", "admin", "nickName", "超级管理员",
+                "status", 1, "roleIds", new long[]{1, 1}));
+        mvc.perform(put("/api/user/1").header("Authorization", admin).contentType("application/json").content(body))
+                .andExpect(jsonPath("$.code").value(200));
+        mvc.perform(get("/api/user/list").header("Authorization", admin))
+                .andExpect(jsonPath("$.data.records[?(@.userName=='admin')].userRoles[0]").value("R_SUPER"))
+                .andExpect(jsonPath("$.data.records[?(@.userName=='operator')].userRoles[0]").value("R_ADMIN"));
+    }
+
+    @Test
+    void weakInitialPasswordIsRejected() throws Exception {
+        String admin = "Bearer " + login("admin").path("token").asText();
+        mvc.perform(post("/api/user").header("Authorization", admin).contentType("application/json")
+                        .content(userBody("weak-user", 2).replace("InitialPass123", "12345678")))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void repeatedLoginFailuresAreThrottled() throws Exception {
+        String body = json.writeValueAsString(Map.of("userName", "lock-probe", "password", "wrong-password"));
+        for (int i = 0; i < 5; i++) {
+            mvc.perform(post("/api/auth/login").contentType("application/json").content(body))
+                    .andExpect(jsonPath("$.code").value(400));
+        }
+        mvc.perform(post("/api/auth/login").contentType("application/json").content(body))
+                .andExpect(jsonPath("$.code").value(429));
+    }
+
+    @Test
+    void uploadWithoutFilePartIsClientError() throws Exception {
+        String admin = "Bearer " + login("admin").path("token").asText();
+        mvc.perform(multipart("/api/file").header("Authorization", admin))
+                .andExpect(status().isBadRequest()).andExpect(jsonPath("$.code").value(400));
+    }
+
     @org.junit.jupiter.api.AfterEach
     void clearAuthentication() {
         org.springframework.security.core.context.SecurityContextHolder.clearContext();
@@ -332,6 +455,26 @@ class SecurityFlowTest {
         mvc.perform(post("/api/auth/refresh").contentType("application/json")
                 .content(json.writeValueAsString(Map.of("refreshToken", tokens.path("refreshToken").asText()))))
                 .andExpect(jsonPath("$.code").value(401));
+    }
+
+    private String menuBody(String type, long parentId, String title, String routeName, String permission)
+            throws Exception {
+        boolean button = "BUTTON".equals(type);
+        var body = new java.util.LinkedHashMap<String, Object>();
+        body.put("parentId", parentId);
+        body.put("menuType", type);
+        body.put("title", title);
+        body.put("routeName", routeName);
+        body.put("path", button ? "" : "user");
+        body.put("component", button ? "" : "/system/user");
+        body.put("permission", permission);
+        body.put("icon", "");
+        body.put("sort", 10);
+        body.put("enabled", true);
+        body.put("externalLink", "");
+        body.put("textBadge", "");
+        body.put("activePath", "");
+        return json.writeValueAsString(body);
     }
 
     private String userBody(String username, long roleId) throws Exception {

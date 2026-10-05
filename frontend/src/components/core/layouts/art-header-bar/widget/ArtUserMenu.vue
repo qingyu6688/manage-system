@@ -63,7 +63,7 @@
 </template>
 
 <script setup lang="ts">
-  import { fetchLogout } from '@/api/auth'
+  import { logoutWithRevoke } from '@/utils/sys/logout'
   import { useI18n } from 'vue-i18n'
   import { useRouter } from 'vue-router'
   import { ElMessageBox } from 'element-plus'
@@ -132,12 +132,9 @@
         cancelButtonText: t('common.cancel'),
         customClass: 'login-out-dialog'
       })
-        .then(async () => {
-          await fetchLogout()
-          userStore.logOut()
-        })
+        .then(logoutWithRevoke)
         .catch((error: unknown) => {
-          // 取消确认直接返回；请求失败时统一请求层已提示错误，保留当前登录状态供重试。
+          // 取消确认直接返回
           if (error !== 'cancel' && error !== 'close') closeUserMenu()
         })
     }, 200)

@@ -21,6 +21,7 @@ import { HttpError, handleError, showError, showSuccess } from './error'
 import { $t } from '@/locales'
 import { BaseResponse, ErrorDetail } from '@/types'
 import { belongsToSameSession, createSessionRefresher } from './session-refresh'
+import { parseBlobError } from './blob-error'
 
 /** 请求配置常量 */
 const REQUEST_TIMEOUT = 15000
@@ -252,7 +253,10 @@ async function request<T = unknown>(config: ExtendedAxiosRequestConfig): Promise
   }
 }
 
-/** 下载二进制文件，跳过业务响应结构解析 */
+/**
+ * 下载二进制文件，跳过业务响应结构解析。
+ * 后端业务错误（如文件已被移除）以 HTTP 200 + JSON 返回，需要识别出来，不能当成文件保存。
+ */
 async function download(config: ExtendedAxiosRequestConfig): Promise<Blob> {
   try {
     const response = await axiosInstance.request<Blob>({
@@ -260,13 +264,39 @@ async function download(config: ExtendedAxiosRequestConfig): Promise<Blob> {
       method: config.method || 'GET',
       responseType: 'blob'
     })
+    const blobError = await parseBlobError(response.data)
+    if (blobError) {
+      throw new HttpError(blobError.msg || $t('httpMsg.requestFailed'), blobError.code, {
+        data: blobError,
+        url: config.url,
+        method: config.method?.toUpperCase() || 'GET',
+        error: blobError.error
+      })
+    }
     return response.data
   } catch (error) {
-    if (error instanceof HttpError && error.code !== ApiStatus.unauthorized) {
-      showError(error, config.showErrorMessage !== false)
+    const httpError = await normalizeBlobHttpError(error, config)
+    if (httpError instanceof HttpError && httpError.code !== ApiStatus.unauthorized) {
+      showError(httpError, config.showErrorMessage !== false)
     }
-    return Promise.reject(error)
+    return Promise.reject(httpError)
   }
+}
+
+/** HTTP 层错误（403、500 等）的响应体在 blob 模式下也是 Blob，需要转换后才能拿到后端提示 */
+async function normalizeBlobHttpError(
+  error: unknown,
+  config: ExtendedAxiosRequestConfig
+): Promise<unknown> {
+  if (!(error instanceof HttpError) || !(error.data instanceof Blob)) return error
+  const blobError = await parseBlobError(error.data)
+  if (!blobError) return error
+  return new HttpError(blobError.msg || error.message, blobError.code, {
+    data: blobError,
+    url: config.url,
+    method: config.method?.toUpperCase() || 'GET',
+    error: blobError.error
+  })
 }
 
 /** API方法集合 */

@@ -616,7 +616,7 @@
       "validation": {
         "usernameLength": "长度在2到30个字符",
         "initialPassword": "请输入初始密码",
-        "passwordLength": "密码至少8个字符",
+        "passwordLength": "密码应为8到64个字符，且同时包含字母和数字",
         "phone": "请输入正确的手机号",
         "email": "请输入正确的邮箱"
       }

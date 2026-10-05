@@ -115,6 +115,7 @@
     fetchGetOperationLogList
   } from '@/api/operations'
   import LogSearch from './modules/log-search.vue'
+  import { isHandledRejection } from '@/utils/http/error'
 
   defineOptions({ name: 'OperationLog' })
 
@@ -271,14 +272,18 @@
       type: 'warning',
       confirmButtonText: t('common.confirm'),
       cancelButtonText: t('common.cancel')
-    }).then(async () => {
-      await fetchDeleteOperationLog(row.id)
-      if (logType === 'OPERATION') {
-        await operationRefreshRemove()
-        return
-      }
-      await loginRefreshRemove()
     })
+      .then(async () => {
+        await fetchDeleteOperationLog(row.id)
+        if (logType === 'OPERATION') {
+          await operationRefreshRemove()
+          return
+        }
+        await loginRefreshRemove()
+      })
+      .catch((error: unknown) => {
+        if (!isHandledRejection(error)) throw error
+      })
   }
 
   const clearLogs = (): void => {
@@ -286,10 +291,14 @@
       type: 'error',
       confirmButtonText: t('common.confirm'),
       cancelButtonText: t('common.cancel')
-    }).then(async () => {
-      await fetchClearOperationLogs()
-      await Promise.all([operationGetData(), loginGetData()])
     })
+      .then(async () => {
+        await fetchClearOperationLogs()
+        await Promise.all([operationGetData(), loginGetData()])
+      })
+      .catch((error: unknown) => {
+        if (!isHandledRejection(error)) throw error
+      })
   }
 </script>
 

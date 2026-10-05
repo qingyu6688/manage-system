@@ -42,7 +42,7 @@ public class AuthController {
                 OperationLogInterceptor.LOGIN_USERNAME_ATTRIBUTE,
                 loginRequest.userName()
         );
-        return ApiResponse.success("登录成功", authService.login(loginRequest));
+        return ApiResponse.success("登录成功", authService.login(loginRequest, httpRequest.getRemoteAddr()));
     }
 
     @PostMapping("/auth/refresh")

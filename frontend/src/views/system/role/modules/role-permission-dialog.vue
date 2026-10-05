@@ -7,15 +7,17 @@
     class="el-dialog-border"
     @close="handleClose"
   >
-    <ElScrollbar height="70vh">
+    <ElScrollbar height="70vh" v-loading="loading">
+      <!-- 角色可以只授权菜单而不授权其下按钮，树组件自带的父子联动表达不了，改为严格模式手动联动 -->
       <ElTree
         ref="treeRef"
         :data="processedMenuList"
         show-checkbox
+        check-strictly
         node-key="id"
         :default-expand-all="isExpandAll"
         :props="defaultProps"
-        @check="handleTreeCheck"
+        @check="handleNodeCheck"
       >
         <template #default="{ data }">
           <div style="display: flex; align-items: center">
@@ -34,7 +36,7 @@
       <ElButton @click="toggleSelectAll" style="margin-left: 8px">{{
         isSelectAll ? $t('systemManage.role.unselectAll') : $t('systemManage.role.selectAll')
       }}</ElButton>
-      <ElButton type="primary" :loading="saving" @click="savePermission">{{
+      <ElButton type="primary" :loading="saving" :disabled="loading" @click="savePermission">{{
         $t('common.save')
       }}</ElButton>
     </template>
@@ -42,9 +44,10 @@
 </template>
 
 <script setup lang="ts">
-  import { useMenuStore } from '@/store/modules/menu'
+  import type { AppRouteRecord } from '@/types/router'
   import { formatMenuTitle } from '@/utils/router'
-  import { fetchGetRoleMenuIds, fetchUpdateRoleMenus } from '@/api/system-manage'
+  import { fetchGetMenuTree, fetchGetRoleMenuIds, fetchUpdateRoleMenus } from '@/api/system-manage'
+  import { toggleMenuPermission, type TreeKey } from '@/utils/menu-permission'
 
   type RoleListItem = Api.SystemManage.RoleListItem
 
@@ -65,11 +68,12 @@
 
   const emit = defineEmits<Emits>()
 
-  const { menuList } = storeToRefs(useMenuStore())
+  const menuTree = ref<AppRouteRecord[]>([])
   const treeRef = ref()
   const isExpandAll = ref(true)
   const isSelectAll = ref(false)
   const saving = ref(false)
+  const loading = ref(false)
 
   /**
    * 弹窗显示状态双向绑定
@@ -129,7 +133,8 @@
       return processed
     }
 
-    return (menuList.value as any[]).map(processNode)
+    // 使用完整菜单树而不是当前登录人的菜单，否则未授权给自己的菜单无法分配给其他角色
+    return (menuTree.value as MenuNode[]).map(processNode)
   })
 
   /**
@@ -141,16 +146,25 @@
   }
 
   /**
-   * 监听弹窗打开，初始化权限数据
+   * 监听弹窗打开，加载完整菜单树和角色已授权节点
    */
   watch(
     () => props.modelValue,
-    async (newVal) => {
-      if (newVal && props.roleData) {
-        const menuIds = await fetchGetRoleMenuIds(props.roleData.roleId)
+    async (open) => {
+      if (!open || !props.roleData) return
+      loading.value = true
+      try {
+        const [tree, menuIds] = await Promise.all([
+          fetchGetMenuTree(),
+          fetchGetRoleMenuIds(props.roleData.roleId)
+        ])
+        menuTree.value = tree
         await nextTick()
-        treeRef.value?.setCheckedKeys(menuIds, false)
+        // 严格模式下按原样回填，父节点不会再把所有子节点一起勾上
+        treeRef.value?.setCheckedKeys(menuIds)
         handleTreeCheck()
+      } finally {
+        loading.value = false
       }
     }
   )
@@ -164,15 +178,25 @@
   }
 
   /**
+   * 勾选节点时同时勾选下级和全部上级（上级未授权时子节点不可达），取消时一并取消下级
+   */
+  const handleNodeCheck = (data: MenuNode, state: { checkedKeys: TreeKey[] }) => {
+    const tree = treeRef.value
+    if (!tree || data.id == null) return
+    const checked = state.checkedKeys.includes(data.id)
+    tree.setCheckedKeys(
+      toggleMenuPermission(processedMenuList.value, state.checkedKeys, data.id, checked)
+    )
+    handleTreeCheck()
+  }
+
+  /**
    * 保存权限配置
    */
   const savePermission = async () => {
     if (!treeRef.value || !props.roleData) return
     const checkedKeys = treeRef.value.getCheckedKeys() as Array<number | string>
-    const halfCheckedKeys = treeRef.value.getHalfCheckedKeys() as Array<number | string>
-    const menuIds = [...new Set([...checkedKeys, ...halfCheckedKeys])]
-      .map(Number)
-      .filter(Number.isFinite)
+    const menuIds = [...new Set(checkedKeys)].map(Number).filter(Number.isFinite)
 
     saving.value = true
     try {
@@ -235,7 +259,6 @@
   }
 
   /**
-   * 处理树节点选中状态变化
    * 同步更新全选按钮状态
    */
   const handleTreeCheck = () => {

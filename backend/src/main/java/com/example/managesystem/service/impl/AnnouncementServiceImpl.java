@@ -121,8 +121,13 @@ public class AnnouncementServiceImpl implements AnnouncementService {
             String username,
             LocalDateTime now
     ) {
+        boolean alreadyPublished = PUBLISHED.equals(announcement.getStatus());
         announcement.setStatus(status);
         if (PUBLISHED.equals(status)) {
+            // 编辑已发布公告或重复点发布时保留首次发布人和时间，否则列表排序会被普通修改打乱。
+            if (alreadyPublished && announcement.getPublishedAt() != null) {
+                return;
+            }
             announcement.setPublishedBy(username);
             announcement.setPublishedAt(now);
             return;
